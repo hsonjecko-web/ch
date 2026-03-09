@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الصفحة الرئيسية</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { padding-bottom: 80px; }
+        .slider-container { position: relative; width: 100%; height: 200px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); margin-bottom: 24px; direction: ltr; }
+        .slider-wrapper { display: flex; transition: transform 0.5s ease; height: 100%; }
+        .slide { flex: 0 0 100%; height: 100%; position: relative; background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); }
+        .slide img { width: 100%; height: 100%; object-fit: cover; }
+        .slide-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); color: white; }
+        .slide-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .slide-subtitle { font-size: 13px; opacity: 0.9; }
+        .slider-dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.3s; }
+        .dot.active { background: white; width: 24px; border-radius: 4px; }
+        .speaker-card { min-width: 140px; background: var(--surface); border-radius: 16px; padding: 16px; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; }
+        .speaker-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .speaker-avatar { width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 12px; border: 3px solid var(--border); overflow: hidden; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; }
+        .speaker-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .speaker-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .speaker-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+        .follow-btn { width: 100%; padding: 8px; background: transparent; border: 2px solid var(--primary); border-radius: 8px; color: var(--primary); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+        .follow-btn:hover, .follow-btn.following { background: var(--primary); color: white; }
+        .library-card { background: var(--surface); border-radius: 12px; padding: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); transition: all 0.3s; text-decoration: none; color: var(--text); display: block; }
+        .library-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .library-icon { width: 48px; height: 48px; background: var(--surface-alt); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px; }
+        .library-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .library-count { font-size: 12px; color: var(--text-muted); }
+        .video-card { min-width: 280px; background: var(--surface); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; text-decoration: none; color: var(--text); display: block; }
+        .video-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .video-thumbnail { position: relative; width: 100%; height: 160px; background: var(--surface-alt); }
+        .video-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .video-duration { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .play-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary); opacity: 0; transition: all 0.3s; }
+        .video-card:hover .play-btn { opacity: 1; }
+        .video-info { padding: 16px; }
+        .video-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+        .video-meta { display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = { apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0", authDomain: "chat-94032.firebaseapp.com", projectId: "chat-94032", storageBucket: "chat-94032.firebasestorage.app", messagingSenderId: "920803161623", appId: "1:920803161623:web:a2995a99c07b42af1d0e52" };
+        const app = initializeApp(firebaseConfig);
+        window.firebaseApps = [app];
+    </script>
+</head>
+<body>
+    <div class="decoration-circle decoration-circle-1"></div>
+    <div class="decoration-circle decoration-circle-2"></div>
+    <header class="header">
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <span class="user-name" id="userName">...</span>
+        </div>
+        <div class="header-actions">
+            <a href="notifications.html" class="header-btn">🔔<span class="notification-badge" id="notifBadge" style="display:none;">0</span></a>
+            <button class="theme-toggle" onclick="toggleTheme()"><span id="themeIcon">☀️</span></button>
+        </div>
+    </header>
+    <main class="main-content container-wide">
+        <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+                <div class="slide"><img src="1.jpeg" alt="1"><div class="slide-overlay"><div class="slide-title">الدكور حسين الباز</div><div class="slide-subtitle">متخصص</div></div></div>
+                <div class="slide"><img src="2.jpeg" alt="2"><div class="slide-overlay"><div class="slide-title">الشيخ هاشم هنداوي</div><div class="slide-subtitle">محاور</div></div></div>
+                <div class="slide"><img src="3.jpeg" alt="3"><div class="slide-overlay"><div class="slide-title">الدكتور عاصم هيثم</div><div class="slide-subtitle">محاور</div></div></div>
+                <div class="slide"><img src="as.png" alt="4"><div class="slide-overlay"><div class="slide-title">الأربعين النووية</div><div class="slide-subtitle">شرح الأحاديث</div></div></div>
+            </div>
+            <div class="slider-dots" id="sliderDots"></div>
+        </div>
+        <section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">🎤</span>المحاورون</h2><a href="#" class="view-all-btn" onclick="showToast('عرض الكل')">عرض الكل ←</a></div>
+            <div class="scroll-horizontal" id="speakersContainer"></div>
+        </section>
+        <section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">👥</span>المستخدمون</h2><a href="friends.html?tab=users" class="view-all-btn">عرض الكل ←</a></div>
+            <div class="scroll-horizontal" id="usersContainer">
+                <div class="speaker-card loading-card"><div class="speaker-avatar" style="background:var(--surface-alt);">⏳</div><div class="speaker-name">جاري التحميل...</div></div>
+            </div>
+
+<section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">🏠</span>غرف الدردشة</h2><a href="chat.html?tab=suggestions" class="view-all-btn">عرض الكل ←</a></div>
+            <div class="scroll-horizontal" id="roomsContainer">
+                <div class="speaker-card" onclick="window.location.href='chat.html?create=true'" style="cursor:pointer;">
+                    <div class="speaker-avatar" style="background:var(--primary);color:white;">➕</div>
+                    <div class="speaker-name">إنشاء غرفة</div>
+                    <div class="speaker-title">جديدة</div>
+                </div>
+            </div>
+        </section>
+        <section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">📚</span>المكتبة الإسلامية</h2></div>
+            <div class="grid-2">
+                <a href="#" class="library-card" onclick="showToast('أحاديث')"><div class="library-icon">📖</div><div class="library-title">أهم الأحاديث</div><div class="library-count">+1000 حديث</div></a>
+                <a href="#" class="library-card" onclick="showToast('الأذكار')"><div class="library-icon">🤲</div><div class="library-title">الأذكار والأدعية</div><div class="library-count">+500 ذكر</div></a>
+                <a href="#" class="library-card" onclick="showToast('الزامات')"><div class="library-icon">📿</div><div class="library-title">أهم اللزامات</div><div class="library-count">+200 لزام</div></a>
+                <a href="#" class="library-card" onclick="showToast('التفسير')"><div class="library-icon">📜</div><div class="library-title">التفسير الميسر</div><div class="library-count">سورة الكهف</div></a>
+            </div>
+        </section>
+        <section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">🎥</span>أهم المقاطع</h2><a href="#" class="view-all-btn">عرض الكل ←</a></div>
+            <div class="scroll-horizontal" id="videosContainer"></div>
+        </section>
+        <!-- <section class="section">
+            <div class="section-header"><h2 class="section-title"><span class="section-icon">🏠</span>غرف الدردشة</h2><a href="chat.html" class="view-all-btn">عرض الكل ←</a></div>
+            <div class="scroll-horizontal" id="roomsContainer">
+                <div class="speaker-card" onclick="showCreateRoomModal()" style="cursor:pointer;"><div class="speaker-avatar" style="background:var(--primary);color:white;">➕</div><div class="speaker-name">إنشاء غرفة</div><div class="speaker-title">جديدة</div></div>
+            </div>
+        </section> -->
+    </main>
+    <nav class="footer-nav">
+        <a href="#" class="nav-item active"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span>المواقع</span></a>
+        <a href="friends.html" class="nav-item"><span class="nav-icon">👥</span><span>الأصدقاء</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+    </nav>
+    <div class="toast" id="toast"><span>✓</span><span id="toastMessage">تم!</span></div>
+    
+    <!-- Profile Modal -->
+    <div class="profile-modal-overlay" id="profileModal">
+        <div class="profile-modal">
+            <div class="profile-modal-header">
+                <button class="profile-modal-close" onclick="closeProfileModal()">✕</button>
+                <div class="profile-modal-avatar" id="profileModalAvatar">
+                    <span class="avatar-placeholder">👤</span>
+                </div>
+            </div>
+            <div class="profile-modal-body">
+                <div class="profile-modal-name" id="profileModalName">...</div>
+                <div class="profile-modal-username" id="profileModalUsername">@...</div>
+                <div class="profile-modal-stats">
+                    <div class="profile-modal-stat">
+                        <span class="profile-modal-stat-value" id="profileFriendsCount">0</span>
+                        <span class="profile-modal-stat-label">الأصدقاء</span>
+                    </div>
+                </div>
+                <div class="profile-modal-actions">
+                    <button class="profile-modal-btn add-friend" id="profileAddFriendBtn" onclick="handleProfileAddFriend()">
+                        <span>➕</span>
+                        <span id="profileAddFriendText">إضافة صديق</span>
+                    </button>
+                    <button class="profile-modal-btn chat" id="profileChatBtn" onclick="handleProfileChat()">
+                        <span>💬</span>
+                        <span>دردشة</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Private Code Modal -->
+    <div class="private-code-modal-overlay" id="privateCodeModal">
+        <div class="private-code-modal">
+            <div class="private-code-modal-header">
+                <div class="private-code-modal-icon">🔐</div>
+                <div class="private-code-modal-title">غرفة خاصة</div>
+            </div>
+            <div class="private-code-modal-body">
+                <div class="private-code-room-name" id="privateCodeRoomName">...</div>
+                <input type="text" class="private-code-input" id="privateCodeInput" placeholder="أدخل الرمز" maxlength="8" autocomplete="off">
+                <div class="private-code-error" id="privateCodeError">الرمز غير صحيح</div>
+            </div>
+            <div class="private-code-modal-footer">
+                <button class="private-code-cancel-btn" onclick="closePrivateCodeModal()">إلغاء</button>
+                <button class="private-code-submit-btn" onclick="submitPrivateCode()">دخول</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script type="module">
+        // Wait for Firebase to initialize and get existing app
+        import { getFirestore, collection, onSnapshot, query, orderBy, where, getDocs, addDoc, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Use the already initialized app from window.firebaseApps
+        const db = getFirestore(window.firebaseApps[0]);
+        const auth = getAuth(window.firebaseApps[0]);
+
+        let currentUser = null;
+        let currentUserData = null;
+        let selectedProfileUser = null;
+        let sentRequestsUids = [];
+        let friendsUids = [];
+
+        // Get current user
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                await loadCurrentUserData();
+                await loadSentRequests();
+                await loadFriends();
+            }
+        });
+
+        // Load current user data
+        async function loadCurrentUserData() {
+            try {
+                const q = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    currentUserData = { id: doc.id, ...doc.data() };
+                });
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        }
+
+        // Load sent friend requests
+        async function loadSentRequests() {
+            try {
+                const q = query(collection(db, 'friendRequests'), where('fromUid', '==', currentUser.uid), where('status', '==', 'pending'));
+                const snapshot = await getDocs(q);
+                sentRequestsUids = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    sentRequestsUids.push(data.toUid);
+                });
+            } catch (error) {
+                console.error("Error loading sent requests:", error);
+            }
+        }
+
+        // Load friends
+        async function loadFriends() {
+            try {
+                const q = query(collection(db, 'friends'), where('userId', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                friendsUids = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    friendsUids.push(data.friendId);
+                });
+            } catch (error) {
+                console.error("Error loading friends:", error);
+            }
+        }
+
+        // Load users from Firestore
+        async function loadUsers() {
+            try {
+                const usersContainer = document.getElementById('usersContainer');
+                if (!usersContainer) return;
+
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, orderBy('createdAt', 'desc'));
+                
+                onSnapshot(q, (snapshot) => {
+                    let users = [];
+                    snapshot.forEach((doc) => {
+                        const userData = doc.data();
+                        // Don't show current user
+                        if (!currentUser || userData.uid !== currentUser.uid) {
+                            users.push({ id: doc.id, ...userData });
+                        }
+                    });
+
+                    // Filter out users who are already friends or have pending requests
+                    if (currentUser) {
+                        users = users.filter(user => {
+                            return !friendsUids.includes(user.uid) && !sentRequestsUids.includes(user.uid);
+                        });
+                    }
+
+                    // Limit to first 10 users
+                    users = users.slice(0, 10);
+
+                    if (users.length === 0) {
+                        usersContainer.innerHTML = '<div class="speaker-card"><div class="speaker-avatar">📭</div><div class="speaker-name">لا يوجد مستخدمين</div><div class="speaker-title">كن أول من يسجل!</div></div>';
+                        return;
+                    }
+
+                    let html = '';
+                    users.forEach(user => {
+                        const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                        const country = user.country || '';
+                        
+                        html += `<div class="speaker-card" onclick="openProfileModal('${user.uid}', '${user.fullName || ''}', '${user.username || ''}', '${user.avatar || ''}', '${user.country || ''}')" style="cursor:pointer;">
+                            <div class="speaker-avatar">${initials}</div>
+                            <div class="speaker-name">${user.fullName || user.username || 'مستخدم'}</div>
+                            <div class="speaker-title">${country}</div>
+                        </div>`;
+                    });
+
+                    usersContainer.innerHTML = html;
+                }, (error) => {
+                    console.error("Error loading users:", error);
+                    usersContainer.innerHTML = '<div class="speaker-card"><div class="speaker-avatar">⚠️</div><div class="speaker-name">خطأ في التحميل</div></div>';
+                });
+
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+        // Open Profile Modal
+        window.openProfileModal = async function(uid, fullName, username, avatar, country) {
+            selectedProfileUser = { uid, fullName, username, avatar, country };
+            
+            // Set avatar
+            const avatarEl = document.getElementById('profileModalAvatar');
+            if (avatar && avatar.length > 0) {
+                avatarEl.innerHTML = `<img src="${avatar}" alt="${fullName}">`;
+            } else {
+                const initials = fullName ? fullName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                avatarEl.innerHTML = `<span class="avatar-placeholder">${initials}</span>`;
+            }
+            
+            // Set name and username
+            document.getElementById('profileModalName').textContent = fullName || username || 'مستخدم';
+            document.getElementById('profileModalUsername').textContent = '@' + (username || 'user');
+            
+            // Load friend count
+            await loadUserFriendCount(uid);
+            
+            // Update button states
+            await updateProfileButtons(uid);
+            
+            // Show modal
+            document.getElementById('profileModal').classList.add('active');
+        };
+
+        // Load user friend count
+        async function loadUserFriendCount(userUid) {
+            try {
+                const q = query(collection(db, 'friends'), where('userId', '==', userUid));
+                const snapshot = await getDocs(q);
+                let friendCount = 0;
+                snapshot.forEach(() => friendCount++);
+                document.getElementById('profileFriendsCount').textContent = friendCount;
+            } catch (error) {
+                console.error("Error loading friend count:", error);
+                document.getElementById('profileFriendsCount').textContent = '0';
+            }
+        }
+
+        // Update profile buttons based on friendship status
+        async function updateProfileButtons(userUid) {
+            const addBtn = document.getElementById('profileAddFriendBtn');
+            const addText = document.getElementById('profileAddFriendText');
+            
+            if (!currentUser) {
+                addBtn.style.display = 'none';
+                return;
+            }
+            
+            // Check if already friends
+            const friendsQ = query(collection(db, 'friends'), where('userId', '==', currentUser.uid), where('friendId', '==', userUid));
+            const friendsSnap = await getDocs(friendsQ);
+            
+            if (!friendsSnap.empty) {
+                addBtn.className = 'profile-modal-btn add-friend pending';
+                addText.textContent = 'صديق';
+                addBtn.onclick = () => showToast('أنتما صديقان بالفعل');
+                return;
+            }
+            
+            // Check if request already sent
+            const sentQ = query(collection(db, 'friendRequests'), where('fromUid', '==', currentUser.uid), where('toUid', '==', userUid), where('status', '==', 'pending'));
+            const sentSnap = await getDocs(sentQ);
+            
+            if (!sentSnap.empty) {
+                addBtn.className = 'profile-modal-btn add-friend pending';
+                addText.textContent = 'تم الإرسال';
+                addBtn.onclick = () => showToast('تم إرسال طلب الصداقة مسبقاً');
+                return;
+            }
+            
+            // Check if received request
+            const receivedQ = query(collection(db, 'friendRequests'), where('toUid', '==', currentUser.uid), where('fromUid', '==', userUid), where('status', '==', 'pending'));
+            const receivedSnap = await getDocs(receivedQ);
+            
+            if (!receivedSnap.empty) {
+                addBtn.className = 'profile-modal-btn add-friend';
+                addText.textContent = 'قبول الطلب';
+                addBtn.onclick = () => acceptProfileRequest(userUid);
+                return;
+            }
+            
+            // Not friends, show add button
+            addBtn.className = 'profile-modal-btn add-friend';
+            addText.textContent = 'إضافة صديق';
+            addBtn.onclick = handleProfileAddFriend;
+        }
+
+        // Handle add friend from profile
+        window.handleProfileAddFriend = async function() {
+            if (!currentUser || !currentUserData) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            if (!selectedProfileUser) return;
+            
+            try {
+                await addDoc(collection(db, 'friendRequests'), {
+                    fromUid: currentUser.uid,
+                    fromName: currentUserData.fullName,
+                    fromUsername: currentUserData.username,
+                    fromAvatar: currentUserData.avatar || null,
+                    toUid: selectedProfileUser.uid,
+                    toName: selectedProfileUser.fullName,
+                    toUsername: selectedProfileUser.username,
+                    toAvatar: selectedProfileUser.avatar || null,
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+
+                showToast('تم إرسال طلب الصداقة');
+                closeProfileModal();
+                loadUsers();
+            } catch (error) {
+                console.error("Error sending friend request:", error);
+                showToast('فشل إرسال الطلب', 'error');
+            }
+        };
+
+        // Accept friend request from profile
+        async function acceptProfileRequest(fromUid) {
+            if (!currentUser || !currentUserData || !selectedProfileUser) return;
+
+            try {
+                // Find and update the request
+                const q = query(collection(db, 'friendRequests'), where('fromUid', '==', fromUid), where('toUid', '==', currentUser.uid), where('status', '==', 'pending'));
+                const snapshot = await getDocs(q);
+                
+                snapshot.forEach(async (docSnap) => {
+                    await updateDoc(doc(db, 'friendRequests', docSnap.id), {
+                        status: 'accepted',
+                        acceptedAt: serverTimestamp()
+                    });
+
+                    // Add to friends (both ways)
+                    await addDoc(collection(db, 'friends'), {
+                        userId: currentUser.uid,
+                        friendId: fromUid,
+                        friendName: selectedProfileUser.fullName,
+                        friendUsername: selectedProfileUser.username,
+                        friendAvatar: selectedProfileUser.avatar,
+                        addedAt: serverTimestamp()
+                    });
+
+                    await addDoc(collection(db, 'friends'), {
+                        userId: fromUid,
+                        friendId: currentUser.uid,
+                        friendName: currentUserData.fullName,
+                        friendUsername: currentUserData.username,
+                        friendAvatar: currentUserData.avatar || null,
+                        addedAt: serverTimestamp()
+                    });
+                });
+
+                showToast('تم قبول طلب الصداقة');
+                closeProfileModal();
+                loadUsers();
+            } catch (error) {
+                console.error("Error accepting request:", error);
+                showToast('فشل قبول الطلب', 'error');
+            }
+        }
+
+        // Handle chat from profile
+        window.handleProfileChat = function() {
+            if (!selectedProfileUser) return;
+            closeProfileModal();
+            window.location.href = `chat.html?user=${selectedProfileUser.uid}`;
+        };
+
+        // Close profile modal
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.remove('active');
+            selectedProfileUser = null;
+        };
+
+        // Load chat rooms from Firestore
+        let selectedRoom = null;
+
+        async function loadChatRooms() {
+            try {
+                const roomsContainer = document.getElementById('roomsContainer');
+                if (!roomsContainer) return;
+
+                const roomsRef = collection(db, 'chatRooms');
+                const q = query(roomsRef, orderBy('createdAt', 'desc'));
+                
+                onSnapshot(q, (snapshot) => {
+                    let rooms = [];
+                    snapshot.forEach((doc) => {
+                        const roomData = doc.data();
+                        rooms.push({ id: doc.id, ...roomData });
+                    });
+
+                    // Limit to first 10 rooms
+                    rooms = rooms.slice(0, 10);
+
+                    if (rooms.length === 0) {
+                        roomsContainer.innerHTML = '<div class="room-card"><div class="room-card-default-bg">📭</div><div class="room-card-body"><div class="room-card-name">لا توجد غرف</div><div class="room-card-meta">أنشئ غرفة جديدة!</div></div></div>';
+                        return;
+                    }
+
+                    let html = '';
+                    rooms.forEach(room => {
+                        const memberCount = room.members ? room.members.length : 0;
+                        const roomType = room.type || 'public';
+                        const isPrivate = roomType === 'private';
+                        const roomImage = room.image || '';
+                        
+                        // Room image HTML
+                        let imageHtml = '';
+                        if (roomImage && roomImage.length > 0) {
+                            imageHtml = `<div class="room-card-image"><img src="${roomImage}" alt="${room.name}"><span class="room-type-badge ${roomType}">${isPrivate ? '🔒 خاص' : '🌐 عام'}</span></div>`;
+                        } else {
+                            imageHtml = `<div class="room-card-image"><div class="room-card-default-bg">${room.isGroup ? '👥' : '💬'}</div><span class="room-type-badge ${roomType}">${isPrivate ? '🔒 خاص' : '🌐 عام'}</span></div>`;
+                        }
+                        
+                        html += `<div class="room-card">
+                            ${imageHtml}
+                            <div class="room-card-body">
+                                <div class="room-card-name">${room.name}</div>
+                                <div class="room-card-meta">
+                                    <span class="room-card-members">👥 ${memberCount} عضو</span>
+                                </div>
+<button class="room-join-btn ${roomType}" onclick="event.stopPropagation(); goToRoom('${room.id}', '${room.name}', '${roomType}', '${room.code || ''}')">${isPrivate ? 'طلب انضمام' : 'انضمام'}</button>
+                            </div>
+                        </div>`;
+                    });
+
+                    roomsContainer.innerHTML = html;
+                }, (error) => {
+                    console.error("Error loading rooms:", error);
+                    roomsContainer.innerHTML = '<div class="room-card"><div class="room-card-default-bg">⚠️</div><div class="room-card-body"><div class="room-card-name">خطأ في التحميل</div></div></div>';
+                });
+
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+
+// Join room function
+        window.joinRoom = async function(roomId, roomName, roomType, roomCode) {
+            if (!currentUser) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            if (roomType === 'private') {
+                // Show private code modal
+                selectedRoom = { id: roomId, name: roomName, code: roomCode };
+                document.getElementById('privateCodeRoomName').textContent = roomName;
+                document.getElementById('privateCodeInput').value = '';
+                document.getElementById('privateCodeError').classList.remove('show');
+                document.getElementById('privateCodeModal').classList.add('active');
+            } else {
+                // Direct join for public rooms
+                try {
+                    const roomRef = doc(db, 'chatRooms', roomId);
+                    const roomSnap = await getDocs(query(collection(db, 'chatRooms'), where('__name__', '==', roomId)));
+                    
+                    roomSnap.forEach(async (roomDoc) => {
+                        const roomData = roomDoc.data();
+                        let members = roomData.members || [];
+                        
+                        if (!members.includes(currentUser.uid)) {
+                            members.push(currentUser.uid);
+                            await updateDoc(roomRef, { members: members });
+                        }
+                    });
+                    
+                    showToast('تم الانضمام للغرفة بنجاح!');
+                    window.location.href = `chat.html?room=${roomId}`;
+                } catch (error) {
+                    console.error("Error joining room:", error);
+                    showToast('فشل الانضمام للغرفة', 'error');
+                }
+            }
+        };
+
+// Go to room - Navigate to chat rooms list in chat page
+        window.goToRoom = function(roomId, roomName, roomType, roomCode) {
+            // Navigate to chat page with rooms tab and suggestions
+            window.location.href = `chat.html?tab=suggestions`;
+        };
+
+        // Show private code modal
+        window.showPrivateCodeModal = function(roomId, roomName, roomCode) {
+            selectedRoom = { id: roomId, name: roomName, code: roomCode };
+            document.getElementById('privateCodeRoomName').textContent = roomName;
+            document.getElementById('privateCodeInput').value = '';
+            document.getElementById('privateCodeError').classList.remove('show');
+            document.getElementById('privateCodeModal').classList.add('active');
+        };
+
+        // Close private code modal
+        window.closePrivateCodeModal = function() {
+            document.getElementById('privateCodeModal').classList.remove('active');
+            selectedRoom = null;
+        };
+
+        // Submit private code
+        window.submitPrivateCode = async function() {
+            if (!selectedRoom) return;
+            
+            const inputCode = document.getElementById('privateCodeInput').value.trim();
+            const errorEl = document.getElementById('privateCodeError');
+            
+            if (inputCode !== selectedRoom.code) {
+                errorEl.textContent = 'الرمز غير صحيح';
+                errorEl.classList.add('show');
+                return;
+            }
+            
+            // Code is correct, join the room
+            try {
+                const roomRef = doc(db, 'chatRooms', selectedRoom.id);
+                const roomSnap = await getDocs(query(collection(db, 'chatRooms'), where('__name__', '==', selectedRoom.id)));
+                
+                roomSnap.forEach(async (roomDoc) => {
+                    const roomData = roomDoc.data();
+                    let members = roomData.members || [];
+                    
+                    if (!members.includes(currentUser.uid)) {
+                        members.push(currentUser.uid);
+                        await updateDoc(roomRef, { members: members });
+                    }
+                });
+                
+                closePrivateCodeModal();
+                showToast('تم الانضمام للغرفة بنجاح!');
+                window.location.href = `chat.html?room=${selectedRoom.id}`;
+            } catch (error) {
+                console.error("Error joining private room:", error);
+                showToast('فشل الانضمام للغرفة', 'error');
+            }
+        };
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadChatRooms();
+            
+            // Close modal on overlay click
+            document.getElementById('profileModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeProfileModal();
+                }
+            });
+            
+            // Close private code modal on overlay click
+            document.getElementById('privateCodeModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePrivateCodeModal();
+                }
+            });
+            
+            // Submit code on Enter key
+            document.getElementById('privateCodeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitPrivateCode();
+                }
+            });
+        });
+    </script>
+    <script>
+        initTheme();
+    </script>
+</body>
+</html>
+

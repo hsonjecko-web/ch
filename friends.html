@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الأصدقاء</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { padding-bottom: 80px; }
+        .friend-item { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; cursor: pointer; }
+        .friend-item:hover { transform: translateX(-4px); box-shadow: var(--shadow-lg); }
+        .friend-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; border: 3px solid var(--border); flex-shrink: 0; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--primary); }
+        .friend-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .friend-info { flex: 1; min-width: 0; }
+        .friend-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .friend-bio { font-size: 13px; color: var(--text-light); }
+        .friend-actions { display: flex; gap: 8px; }
+        .action-btn { width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.3s; }
+        .action-btn.message { background: var(--primary); color: white; }
+        .action-btn.block { background: rgba(220,38,38,0.1); color: var(--error); }
+        .action-btn.add { background: var(--success); color: white; }
+        .action-btn.pending { background: var(--surface-alt); color: var(--text-muted); }
+        .pending-actions { display: flex; flex-direction: column; gap: 8px; }
+        .pending-btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
+        .pending-btn.accept { background: var(--success); color: white; }
+        .pending-btn.decline { background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); }
+        
+        /* Request Tabs */
+        .request-tabs { display: flex; gap: 8px; margin-bottom: 16px; background: var(--surface); padding: 8px; border-radius: 12px; }
+        .request-tab { flex: 1; padding: 12px; text-align: center; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--text-light); background: transparent; border: none; font-size: 14px; }
+        .request-tab.active { background: var(--primary); color: white; }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = { apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0", authDomain: "chat-94032.firebaseapp.com", projectId: "chat-94032", storageBucket: "chat-94032.firebasestorage.app", messagingSenderId: "920803161623", appId: "1:920803161623:web:a2995a99c07b42af1d0e52" };
+        const app = initializeApp(firebaseConfig);
+        window.firebaseApps = [app];
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="home.html" class="back-btn">→</a>
+            <span class="header-title">الأصدقاء</span>
+        </div>
+    </header>
+    <main class="main-content">
+        <div class="stats-row">
+            <div class="stat-card" onclick="switchFriendsTab('all', this)" id="tab-btn-all"><div class="stat-icon">🌐</div><div class="stat-label">الجميع</div><div class="stat-count" id="allUsersCount">0</div></div>
+            <div class="stat-card active" onclick="switchFriendsTab('friends', this)" id="tab-btn-friends"><div class="stat-icon">👥</div><div class="stat-label">الأصدقاء</div><div class="stat-count" id="friendsCount">0</div></div>
+            <div class="stat-card" onclick="switchFriendsTab('requests', this)" id="tab-btn-requests"><div class="stat-icon">📩</div><div class="stat-label">الطلبات</div><div class="stat-count" id="requestsCount">0</div></div>
+        <div class="stat-card" onclick="switchFriendsTab('sent', this)" id="tab-btn-sent"><div class="stat-icon">📤</div><div class="stat-label">المرسلة</div><div class="stat-count" id="sentCount">0</div></div>
+        </div>
+        
+        <!-- All Users Tab -->
+        <div class="tab-content" id="tab-all">
+            <div class="chat-list" id="allUsersList">
+                <div class="empty-state"><div class="empty-icon">🌐</div><div class="empty-title">جاري التحميل...</div></div>
+            </div>
+        </div>
+        
+        <!-- Friends Tab -->
+        <div class="tab-content active" id="tab-friends">
+            <div class="chat-list" id="friendsList">
+                <div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">لا يوجد أصدقاء بعد</div></div>
+            </div>
+        </div>
+        
+        <!-- Requests Tab -->
+        <div class="tab-content" id="tab-requests">
+            <div class="request-tabs">
+                <button class="request-tab active" onclick="switchRequestTab('received', this)" id="request-tab-received">الطلبات المستلمة</button>
+                <button class="request-tab" onclick="switchRequestTab('sent', this)" id="request-tab-sent-requests">الطلبات المرسلة</button>
+            </div>
+            <div class="chat-list" id="requestsList">
+                <div class="empty-state"><div class="empty-icon">📩</div><div class="empty-title">لا توجد طلبات</div></div>
+            </div>
+        </div>
+        
+        <!-- Sent Requests Tab -->
+        <div class="tab-content" id="tab-sent">
+            <div class="chat-list" id="sentList">
+                <div class="empty-state"><div class="empty-icon">📤</div><div class="empty-title">لا توجد طلبات مرسلة</div></div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Profile Modal -->
+    <div class="profile-modal-overlay" id="profileModal">
+        <div class="profile-modal">
+            <div class="profile-modal-header">
+                <button class="profile-modal-close" onclick="closeProfileModal()">✕</button>
+                <div class="profile-modal-avatar" id="profileModalAvatar">
+                    <span class="avatar-placeholder">👤</span>
+                </div>
+            </div>
+            <div class="profile-modal-body">
+                <div class="profile-modal-name" id="profileModalName">...</div>
+                <div class="profile-modal-username" id="profileModalUsername">@...</div>
+                <div class="profile-modal-stats">
+                    <div class="profile-modal-stat">
+                        <span class="profile-modal-stat-value" id="profileFriendsCount">0</span>
+                        <span class="profile-modal-stat-label">الأصدقاء</span>
+                    </div>
+                </div>
+                <div class="profile-modal-actions" id="profileActions">
+                    <!-- Buttons will be added dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <nav class="footer-nav">
+        <a href="home.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span>المواقع</span></a>
+        <a href="friends.html" class="nav-item active"><span class="nav-icon">👥</span><span>الأصدقاء</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+    </nav>
+    <div class="toast" id="toast"><span>✓</span><span id="toastMessage">تم!</span></div>
+    <script src="app.js"></script>
+    <script type="module">
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, where, orderBy, doc, updateDoc, deleteDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const db = getFirestore(window.firebaseApps[0]);
+        const auth = getAuth(window.firebaseApps[0]);
+
+        let currentUser = null;
+        let currentUserData = null;
+        let allUsersData = [];
+        let friendsData = [];
+        let pendingRequests = [];
+        let sentRequests = [];
+        let selectedProfileUser = null;
+        let currentRequestTab = 'received';
+
+        // Get current user
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                await loadCurrentUserData();
+                loadAllData();
+            }
+        });
+
+        // Load current user data
+        async function loadCurrentUserData() {
+            try {
+                const q = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    currentUserData = { id: doc.id, ...doc.data() };
+                });
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        }
+
+        // Switch main tabs
+        window.switchFriendsTab = function(tabName, element) {
+            document.querySelectorAll('.stats-row .stat-card').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'requests') {
+                renderRequests();
+            }
+        };
+
+        // Switch request sub-tabs
+        window.switchRequestTab = function(tabName, element) {
+            currentRequestTab = tabName;
+            document.querySelectorAll('.request-tab').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            renderRequests();
+        };
+
+        // Load all data
+        function loadAllData() {
+            loadAllUsers();
+            loadFriends();
+            loadPendingRequests();
+            loadSentRequests();
+        }
+
+        // Load all users except current user
+        function loadAllUsers() {
+            const usersRef = collection(db, 'users');
+            const q = query(usersRef, orderBy('createdAt', 'desc'));
+
+            onSnapshot(q, (snapshot) => {
+                allUsersData = [];
+                snapshot.forEach(doc => {
+                    const userData = doc.data();
+                    if (!currentUser || userData.uid !== currentUser.uid) {
+                        allUsersData.push({ id: doc.id, ...userData });
+                    }
+                });
+
+                // Filter out friends and sent requests
+                if (currentUser) {
+                    allUsersData = allUsersData.filter(user => {
+                        const isFriend = friendsData.some(f => f.friendId === user.uid);
+                        const hasSentRequest = sentRequests.some(r => r.toUid === user.uid);
+                        const hasPendingRequest = pendingRequests.some(r => r.fromUid === user.uid);
+                        return !isFriend && !hasSentRequest && !hasPendingRequest;
+                    });
+                }
+
+                document.getElementById('allUsersCount').textContent = allUsersData.length;
+                renderAllUsers();
+            });
+        }
+
+        // Render all users
+        function renderAllUsers() {
+            const container = document.getElementById('allUsersList');
+            if (!container) return;
+
+            if (allUsersData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">لا يوجد مستخدمين</div></div>';
+                return;
+            }
+
+            let html = '';
+            allUsersData.forEach(user => {
+                const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                
+                html += `
+                    <div class="friend-item" onclick="openUserProfile('${user.uid}', '${user.fullName || ''}', '${user.username || ''}', '${user.avatar || ''}', '${user.country || ''}', 'all')">
+                        <div class="friend-avatar">${initials}</div>
+                        <div class="friend-info">
+                            <div class="friend-name">${user.fullName || user.username || 'مستخدم'}</div>
+                            <div class="friend-bio">@${user.username || ''} • ${user.country || ''}</div>
+                        </div>
+                        <div class="friend-actions" onclick="event.stopPropagation()">
+                            <button class="action-btn add" onclick="sendFriendRequest('${user.uid}', '${user.fullName}', '${user.username}', '${user.avatar || ''}')" title="إضافة صديق">➕</button>
+                            <button class="action-btn message" onclick="openChat('${user.uid}', '${user.fullName}')" title="دردشة">💬</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Send friend request
+        window.sendFriendRequest = async function(userUid, userName, username, avatar) {
+            if (!currentUser || !currentUserData) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'friendRequests'), {
+                    fromUid: currentUser.uid,
+                    fromName: currentUserData.fullName,
+                    fromUsername: currentUserData.username,
+                    fromAvatar: currentUserData.avatar || null,
+                    toUid: userUid,
+                    toName: userName,
+                    toUsername: username,
+                    toAvatar: avatar || null,
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+
+                showToast('تم إرسال طلب الصداقة');
+                loadSentRequests();
+                loadAllUsers();
+            } catch (error) {
+                console.error("Error sending friend request:", error);
+                showToast('فشل إرسال الطلب', 'error');
+            }
+        };
+
+        // Load friends
+        function loadFriends() {
+            if (!currentUser) return;
+
+            const q = query(collection(db, 'friends'), where('userId', '==', currentUser.uid));
+            
+            onSnapshot(q, (snapshot) => {
+                friendsData = [];
+                snapshot.forEach(doc => {
+                    friendsData.push({ id: doc.id, ...doc.data() });
+                });
+
+                document.getElementById('friendsCount').textContent = friendsData.length;
+                renderFriends();
+            });
+        }
+
+        // Render friends
+        function renderFriends() {
+            const container = document.getElementById('friendsList');
+            if (!container) return;
+
+            if (friendsData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">لا يوجد أصدقاء بعد</div></div>';
+                return;
+            }
+
+            let html = '';
+            friendsData.forEach(friend => {
+                const initials = friend.friendName ? friend.friendName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                
+                html += `
+                    <div class="friend-item" onclick="openUserProfile('${friend.friendId}', '${friend.friendName}', '${friend.friendUsername}', '${friend.friendAvatar || ''}', '', 'friend')">
+                        <div class="friend-avatar">${initials}</div>
+                        <div class="friend-info">
+                            <div class="friend-name">${friend.friendName}</div>
+                            <div class="friend-bio">@${friend.friendUsername || ''}</div>
+                        </div>
+                        <div class="friend-actions" onclick="event.stopPropagation()">
+                            <button class="action-btn message" onclick="openChat('${friend.friendId}', '${friend.friendName}')" title="دردشة">💬</button>
+                            <button class="action-btn block" onclick="removeFriend('${friend.id}')" title="حظر">🚫</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Remove friend
+        window.removeFriend = async function(friendId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الصديق؟')) return;
+
+            try {
+                await deleteDoc(doc(db, 'friends', friendId));
+                showToast('تم حذف الصديق');
+                loadFriends();
+            } catch (error) {
+                console.error("Error removing friend:", error);
+                showToast('فشل الحذف', 'error');
+            }
+        };
+
+        // Open chat
+        window.openChat = function(userUid, userName) {
+            window.location.href = `chat.html?user=${userUid}`;
+        };
+
+        // Load pending requests (received)
+        function loadPendingRequests() {
+            if (!currentUser) return;
+
+            const q = query(
+                collection(db, 'friendRequests'),
+                where('toUid', '==', currentUser.uid),
+                where('status', '==', 'pending')
+            );
+
+            onSnapshot(q, (snapshot) => {
+                pendingRequests = [];
+                snapshot.forEach(doc => {
+                    pendingRequests.push({ id: doc.id, ...doc.data() });
+                });
+
+                const totalRequests = pendingRequests.length + sentRequests.length;
+                document.getElementById('requestsCount').textContent = totalRequests;
+            });
+        }
+
+        // Render requests (received and sent)
+        function renderRequests() {
+            const container = document.getElementById('requestsList');
+            if (!container) return;
+
+            if (currentRequestTab === 'received') {
+                // Show received requests
+                if (pendingRequests.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📩</div><div class="empty-title">لا توجد طلبات مستلمة</div></div>';
+                    return;
+                }
+
+                let html = '';
+                pendingRequests.forEach(request => {
+                    const initials = request.fromName ? request.fromName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                    
+                    html += `
+                        <div class="friend-item" onclick="openUserProfile('${request.fromUid}', '${request.fromName}', '${request.fromUsername}', '${request.fromAvatar || ''}', '', 'received')">
+                            <div class="friend-avatar">${initials}</div>
+                            <div class="friend-info">
+                                <div class="friend-name">${request.fromName}</div>
+                                <div class="friend-bio">@${request.fromUsername || ''}</div>
+                            </div>
+                            <div class="friend-actions" onclick="event.stopPropagation()">
+                                <button class="action-btn add" onclick="acceptRequest('${request.id}', '${request.fromUid}', '${request.fromName}', '${request.fromUsername}', '${request.fromAvatar || ''}')" title="قبول">✓</button>
+                                <button class="action-btn block" onclick="blockUserFromRequest('${request.id}', '${request.fromUid}', '${request.fromName}')" title="حظر">🚫</button>
+                                <button class="action-btn message" onclick="openChat('${request.fromUid}', '${request.fromName}')" title="دردشة">💬</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                // Show sent requests
+                if (sentRequests.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📤</div><div class="empty-title">لا توجد طلبات مرسلة</div></div>';
+                    return;
+                }
+
+                let html = '';
+                sentRequests.forEach(request => {
+                    const initials = request.toName ? request.toName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                    
+                    html += `
+                        <div class="friend-item" onclick="openUserProfile('${request.toUid}', '${request.toName}', '${request.toUsername}', '${request.toAvatar || ''}', '', 'sent')">
+                            <div class="friend-avatar">${initials}</div>
+                            <div class="friend-info">
+                                <div class="friend-name">${request.toName}</div>
+                                <div class="friend-bio">@${request.toUsername || ''} • بانتظار الموافقة</div>
+                            </div>
+                            <div class="friend-actions" onclick="event.stopPropagation()">
+                                <button class="action-btn message" onclick="openChat('${request.toUid}', '${request.toName}')" title="دردشة">💬</button>
+                                <button class="action-btn block" onclick="cancelRequest('${request.id}')" title="إلغاء">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+        }
+
+        // Accept friend request
+        window.acceptRequest = async function(requestId, fromUid, fromName, fromUsername, fromAvatar) {
+            try {
+                await updateDoc(doc(db, 'friendRequests', requestId), {
+                    status: 'accepted',
+                    acceptedAt: serverTimestamp()
+                });
+
+                await addDoc(collection(db, 'friends'), {
+                    userId: currentUser.uid,
+                    friendId: fromUid,
+                    friendName: fromName,
+                    friendUsername: fromUsername,
+                    friendAvatar: fromAvatar,
+                    addedAt: serverTimestamp()
+                });
+
+                await addDoc(collection(db, 'friends'), {
+                    userId: fromUid,
+                    friendId: currentUser.uid,
+                    friendName: currentUserData.fullName,
+                    friendUsername: currentUserData.username,
+                    friendAvatar: currentUserData.avatar || null,
+                    addedAt: serverTimestamp()
+                });
+
+                showToast('تم قبول طلب الصداقة');
+                loadPendingRequests();
+                loadFriends();
+                loadAllUsers();
+            } catch (error) {
+                console.error("Error accepting request:", error);
+                showToast('فشل قبول الطلب', 'error');
+            }
+        };
+
+        // Block user from request
+        window.blockUserFromRequest = async function(requestId, fromUid, fromName) {
+            if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
+            
+            try {
+                await updateDoc(doc(db, 'friendRequests', requestId), {
+                    status: 'rejected',
+                    rejectedAt: serverTimestamp()
+                });
+                
+                showToast('تم حظر: ' + fromName);
+                loadPendingRequests();
+            } catch (error) {
+                console.error("Error blocking user:", error);
+                showToast('فشل حظر المستخدم', 'error');
+            }
+        };
+
+        // Load sent requests
+        function loadSentRequests() {
+            if (!currentUser) return;
+
+            const q = query(
+                collection(db, 'friendRequests'),
+                where('fromUid', '==', currentUser.uid),
+                where('status', '==', 'pending')
+            );
+
+            onSnapshot(q, (snapshot) => {
+                sentRequests = [];
+                snapshot.forEach(doc => {
+                    sentRequests.push({ id: doc.id, ...doc.data() });
+                });
+
+                document.getElementById('sentCount').textContent = sentRequests.length;
+                renderSentRequests();
+            });
+        }
+
+        // Render sent requests
+        function renderSentRequests() {
+            const container = document.getElementById('sentList');
+            if (!container) return;
+
+            if (sentRequests.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📤</div><div class="empty-title">لا توجد طلبات مرسلة</div></div>';
+                return;
+            }
+
+            let html = '';
+            sentRequests.forEach(request => {
+                const initials = request.toName ? request.toName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                
+                html += `
+                    <div class="friend-item" onclick="openUserProfile('${request.toUid}', '${request.toName}', '${request.toUsername}', '${request.toAvatar || ''}', '', 'sent')">
+                        <div class="friend-avatar">${initials}</div>
+                        <div class="friend-info">
+                            <div class="friend-name">${request.toName}</div>
+                            <div class="friend-bio">@${request.toUsername || ''} • بانتظار الموافقة</div>
+                        </div>
+                        <div class="friend-actions" onclick="event.stopPropagation()">
+                            <button class="action-btn message" onclick="openChat('${request.toUid}', '${request.toName}')" title="دردشة">💬</button>
+                            <button class="action-btn block" onclick="cancelRequest('${request.id}')" title="إلغاء">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Cancel sent request
+        window.cancelRequest = async function(requestId) {
+            try {
+                await deleteDoc(doc(db, 'friendRequests', requestId));
+                showToast('تم إلغاء الطلب');
+                loadSentRequests();
+                loadAllUsers();
+            } catch (error) {
+                console.error("Error cancelling request:", error);
+                showToast('فشل إلغاء الطلب', 'error');
+            }
+        };
+
+        // Open user profile modal
+        window.openUserProfile = async function(uid, fullName, username, avatar, country, type) {
+            selectedProfileUser = { uid, fullName, username, avatar, country, type };
+            
+            const avatarEl = document.getElementById('profileModalAvatar');
+            if (avatar && avatar.length > 0) {
+                avatarEl.innerHTML = `<img src="${avatar}" alt="${fullName}">`;
+            } else {
+                const initials = fullName ? fullName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                avatarEl.innerHTML = `<span class="avatar-placeholder">${initials}</span>`;
+            }
+            
+            document.getElementById('profileModalName').textContent = fullName || username || 'مستخدم';
+            document.getElementById('profileModalUsername').textContent = '@' + (username || 'user');
+            
+            // Load friend count
+            try {
+                const q = query(collection(db, 'friends'), where('userId', '==', uid));
+                const snapshot = await getDocs(q);
+                let friendCount = 0;
+                snapshot.forEach(() => friendCount++);
+                document.getElementById('profileFriendsCount').textContent = friendCount;
+            } catch (error) {
+                document.getElementById('profileFriendsCount').textContent = '0';
+            }
+            
+            // Render buttons based on type
+            renderProfileButtons(type, uid);
+            
+            document.getElementById('profileModal').classList.add('active');
+        };
+
+        // Render profile buttons based on user type
+        function renderProfileButtons(type, uid) {
+            const actionsContainer = document.getElementById('profileActions');
+            let html = '';
+            
+            if (type === 'all') {
+                html = `
+                    <button class="profile-modal-btn add-friend" onclick="sendFriendRequestFromProfile()">
+                        <span>➕</span>
+                        <span>إضافة صديق</span>
+                    </button>
+                    <button class="profile-modal-btn chat" onclick="openChatFromProfile()">
+                        <span>💬</span>
+                        <span>دردشة</span>
+                    </button>
+                `;
+            } else if (type === 'friend') {
+                html = `
+                    <button class="profile-modal-btn chat" onclick="openChatFromProfile()">
+                        <span>💬</span>
+                        <span>دردشة</span>
+                    </button>
+                    <button class="profile-modal-btn block" onclick="blockUserFromProfile()">
+                        <span>🚫</span>
+                        <span>حظر</span>
+                    </button>
+                `;
+            } else if (type === 'received') {
+                html = `
+                    <button class="profile-modal-btn add-friend" onclick="acceptRequestFromProfile()">
+                        <span>✓</span>
+                        <span>قبول الطلب</span>
+                    </button>
+                    <button class="profile-modal-btn chat" onclick="openChatFromProfile()">
+                        <span>💬</span>
+                        <span>دردشة</span>
+                    </button>
+                    <button class="profile-modal-btn block" onclick="blockUserFromProfile()">
+                        <span>🚫</span>
+                    </button>
+                `;
+            } else if (type === 'sent') {
+                html = `
+                    <button class="profile-modal-btn chat" onclick="openChatFromProfile()">
+                        <span>💬</span>
+                        <span>دردشة</span>
+                    </button>
+                `;
+            }
+            
+            actionsContainer.innerHTML = html;
+        }
+
+        // Send friend request from profile
+        window.sendFriendRequestFromProfile = function() {
+            if (!selectedProfileUser) return;
+            sendFriendRequest(selectedProfileUser.uid, selectedProfileUser.fullName, selectedProfileUser.username, selectedProfileUser.avatar);
+            closeProfileModal();
+        };
+
+        // Open chat from profile
+        window.openChatFromProfile = function() {
+            if (!selectedProfileUser) return;
+            closeProfileModal();
+            openChat(selectedProfileUser.uid, selectedProfileUser.fullName);
+        };
+
+        // Block user from profile
+        window.blockUserFromProfile = function() {
+            if (!selectedProfileUser) return;
+            if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
+                showToast('تم حظر: ' + selectedProfileUser.fullName);
+                closeProfileModal();
+            }
+        };
+
+        // Accept request from profile
+        window.acceptRequestFromProfile = async function() {
+            if (!selectedProfileUser || !currentUserData) return;
+            
+            const request = pendingRequests.find(r => r.fromUid === selectedProfileUser.uid);
+            if (request) {
+                await acceptRequest(request.id, request.fromUid, request.fromName, request.fromUsername, request.fromAvatar);
+                closeProfileModal();
+            }
+        };
+
+        // Close profile modal
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.remove('active');
+            selectedProfileUser = null;
+        };
+
+        // Check URL for tab parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'users') {
+            setTimeout(() => {
+                const tabBtn = document.getElementById('tab-btn-all');
+                if (tabBtn) switchFriendsTab('all', tabBtn);
+            }, 500);
+        }
+
+        // Close modal on overlay click
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('profileModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeProfileModal();
+                }
+            });
+        });
+
+        initTheme();
+    </script>
+    <script>
+        initTheme();
+    </script>
+</body>
+</html>
+

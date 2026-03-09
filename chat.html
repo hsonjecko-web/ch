@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الدردشة</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { padding-bottom: 80px; }
+        
+        /* Chat View Styles */
+        .chat-view { display: none; height: calc(100vh - 180px); flex-direction: column; }
+        .chat-view.active { display: flex; }
+        
+        /* Messages Area */
+        .messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Message Bubble */
+        .message { max-width: 80%; display: flex; flex-direction: column; }
+        .message.sent { align-self: flex-end; }
+        .message.received { align-self: flex-start; }
+        
+        .message-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+        
+        .message.sent .message-bubble { 
+            background: linear-gradient(135deg, var(--primary), var(--primary-light)); 
+            color: white; 
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.received .message-bubble { 
+            background: var(--surface); 
+            color: var(--text); 
+            border: 1px solid var(--border);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
+        .message.sent .message-time { text-align: left; }
+        .message.received .message-time { text-align: right; }
+        
+        /* Chat Input Area */
+        .chat-input-area { 
+            padding: 12px 16px; 
+            background: var(--surface); 
+            border-top: 1px solid var(--border); 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        
+        .chat-input { 
+            flex: 1; 
+            padding: 12px 16px; 
+            background: var(--background); 
+            border: 2px solid var(--border); 
+            border-radius: 24px; 
+            color: var(--text); 
+            font-size: 14px; 
+            outline: none;
+        }
+        
+        .chat-input:focus { border-color: var(--primary); }
+        
+        .send-btn { 
+            width: 44px; 
+            height: 44px; 
+            background: var(--primary); 
+            border: none; 
+            border-radius: 50%; 
+            color: white; 
+            font-size: 18px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .send-btn:hover { background: var(--primary-light); }
+        
+        /* Chat Header */
+        .chat-view-header { 
+            padding: 12px 16px; 
+            background: var(--surface); 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+        }
+        
+        .chat-view-avatar { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            background: var(--surface-alt);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .chat-view-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .chat-view-info { flex: 1; }
+        .chat-view-name { font-size: 16px; font-weight: 700; }
+        .chat-view-status { font-size: 12px; color: var(--text-muted); }
+        
+        .chat-back-btn { 
+            width: 36px; 
+            height: 36px; 
+            background: var(--surface-alt); 
+            border: none; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        /* Empty Chat */
+        .empty-chat { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: var(--text-muted);
+        }
+        
+        .empty-chat-icon { font-size: 48px; margin-bottom: 12px; }
+        
+        /* Date Separator */
+        .date-separator { 
+            text-align: center; 
+            padding: 6px 12px; 
+            font-size: 11px; 
+            color: var(--text-muted); 
+            background: var(--surface-alt); 
+            border-radius: 12px; 
+            align-self: center;
+            margin: 8px 0;
+        }
+        
+        /* Main Tabs */
+        .chat-main-tabs { display: flex; gap: 8px; margin-bottom: 16px; background: var(--surface); padding: 6px; border-radius: 12px; box-shadow: var(--shadow); }
+        .chat-main-tab { flex: 1; padding: 12px 8px; text-align: center; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all 0.3s; border: none; background: transparent; }
+        .chat-main-tab.active { background: var(--primary); color: white; }
+        
+        /* Sub Tabs for Rooms */
+        .chat-sub-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface-alt); padding: 4px; border-radius: 10px; }
+        .chat-sub-tab { flex: 1; padding: 10px 8px; text-align: center; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; color: var(--text-light); transition: all 0.3s; border: none; background: transparent; }
+        .chat-sub-tab.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
+        
+        /* Chat List */
+        .chat-list { display: flex; flex-direction: column; gap: 12px; }
+        .chat-item { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; cursor: pointer; }
+        .chat-item:hover { transform: translateX(-4px); box-shadow: var(--shadow-lg); }
+        .chat-avatar { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; border: 3px solid var(--border); flex-shrink: 0; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; }
+        .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .chat-info { flex: 1; min-width: 0; }
+        .chat-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .chat-last-message { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time { font-size: 11px; color: var(--text-muted); }
+
+        /* Room Card Styles */
+        .room-item { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.3s; cursor: pointer; }
+        .room-item:hover { transform: translateX(-4px); box-shadow: var(--shadow-lg); }
+        .room-item-avatar { width: 56px; height: 56px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .room-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .room-item-info { flex: 1; min-width: 0; }
+        .room-item-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .room-item-meta { font-size: 12px; color: var(--text-light); }
+        .room-item-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .room-item-badge.suggested { background: rgba(2, 132, 199, 0.1); color: var(--info); }
+        .room-item-badge.joined { background: rgba(5, 150, 105, 0.1); color: var(--success); }
+        .room-item-badge.private { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+        .room-item-badge.pending { background: rgba(217, 119, 6, 0.15); color: var(--warning); }
+        
+        /* Action Buttons */
+        .room-action-btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; border: none; font-family: 'Tajawal', sans-serif; }
+        .room-action-btn.join { background: var(--primary); color: white; }
+        .room-action-btn.join:hover { background: var(--primary-light); }
+        .room-action-btn.request-sent { background: rgba(217, 119, 6, 0.15); color: var(--warning); border: 1px solid rgba(217, 119, 6, 0.3); cursor: default; }
+        
+        /* Section Header */
+        .rooms-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .rooms-section-title { font-size: 13px; font-weight: 700; color: var(--text-light); }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-icon { width: 70px; height: 70px; background: var(--surface-alt); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        
+        /* Create Room Modal */
+        .create-room-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9998; opacity: 0; visibility: hidden; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .create-room-modal-overlay.active { opacity: 1; visibility: visible; }
+        .create-room-modal { background: var(--surface); border-radius: 20px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: var(--shadow-xl); transform: scale(0.9) translateY(20px); transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); border: 1px solid var(--border); }
+        .create-room-modal-overlay.active .create-room-modal { transform: scale(1) translateY(0); }
+        .create-room-modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; }
+        .create-room-modal-title { font-size: 18px; font-weight: 700; }
+        .create-room-modal-close { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; transition: all 0.3s; }
+        .create-room-modal-close:hover { background: rgba(255,255,255,0.3); }
+        .create-room-modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+        .create-room-modal-footer { padding: 16px 20px 20px; display: flex; gap: 12px; }
+        .create-room-cancel-btn { flex: 1; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; border: none; font-family: 'Tajawal', sans-serif; background: var(--surface-alt); color: var(--text); }
+        .create-room-cancel-btn:hover { background: var(--border); }
+        .create-room-submit-btn { flex: 1; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; border: none; font-family: 'Tajawal', sans-serif; background: var(--primary); color: white; }
+        .create-room-submit-btn:hover { background: var(--primary-light); }
+        
+        /* Room Image Upload */
+        .room-image-upload { width: 100%; height: 120px; border: 2px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; overflow: hidden; background: var(--surface-alt); }
+        .room-image-upload:hover { border-color: var(--primary); background: rgba(30,58,95,0.05); }
+        .room-image-preview { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-muted); }
+        .room-image-icon { font-size: 32px; }
+        .room-image-text { font-size: 13px; }
+        .room-image-upload img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Room Type Selector */
+        .room-type-selector { display: flex; gap: 12px; }
+        .room-type-option { flex: 1; padding: 16px 12px; border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.3s; text-align: center; background: var(--surface-alt); }
+        .room-type-option:hover { border-color: var(--primary); }
+        .room-type-option.active { border-color: var(--primary); background: rgba(30,58,95,0.1); }
+        .room-type-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+        .room-type-name { font-size: 14px; font-weight: 700; display: block; margin-bottom: 4px; }
+        .room-type-desc { font-size: 11px; color: var(--text-muted); display: block; }
+        
+        /* Private Code Generation */
+        .private-code-generation { display: flex; gap: 8px; }
+        .private-code-generation .form-input { flex: 1; }
+        .generate-code-btn { padding: 14px 16px; background: var(--secondary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-family: 'Tajawal', sans-serif; }
+        .generate-code-btn:hover { background: var(--secondary-light); }
+        .generated-code-display { margin-top: 12px; padding: 12px; background: rgba(5,150,105,0.1); border-radius: 8px; text-align: center; color: var(--success); }
+        .generated-code-display strong { font-size: 20px; letter-spacing: 4px; display: block; margin-top: 4px; }
+        
+        /* Error Message */
+        .create-room-modal .error-message { color: var(--error); font-size: 13px; text-align: center; margin-top: 12px; display: none; }
+        .create-room-modal .error-message.show { display: block; }
+
+        /* Scrollbar */
+        .messages-container::-webkit-scrollbar { width: 6px; }
+        .messages-container::-webkit-scrollbar-track { background: transparent; }
+        .messages-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = { apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0", authDomain: "chat-94032.firebaseapp.com", projectId: "chat-94032", storageBucket: "chat-94032.firebasestorage.app", messagingSenderId: "920803161623", appId: "1:920803161623:web:a2995a99c07b42af1d0e52" };
+        const app = initializeApp(firebaseConfig);
+        window.firebaseApps = [app];
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="home.html" class="back-btn">→</a>
+            <span class="header-title">الدردشة</span>
+        </div>
+    </header>
+    <main class="main-content">
+        <!-- Main Tabs -->
+        <div class="chat-main-tabs">
+            <button class="chat-main-tab active" onclick="switchChatMainTab('chats', this)">المحادثات</button>
+            <button class="chat-main-tab" onclick="switchChatMainTab('rooms', this)">غرف الدردشة</button>
+            <button class="chat-main-tab create-room-tab" onclick="showCreateRoomModal()" title="إنشاء غرفة جديدة">انشاءغرفة</button>
+        </div> 
+        
+        <!-- Chats Tab -->
+        <div class="tab-content active" id="tab-chats">
+            <!-- Chat List View -->
+            <div id="chatListView">
+                <div class="chat-list" id="privateChatsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <div class="empty-title">لا توجد محادثات بعد</div>
+                        <p style="font-size: 13px; margin-top: 8px;">ابدأ محادثة مع أصدقائك!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat View (Individual Conversation) -->
+            <div class="chat-view" id="chatView">
+                <div class="chat-view-header">
+                    <button class="chat-back-btn" onclick="closeChatView()">←</button>
+                    <div class="chat-view-avatar" id="chatViewAvatar"></div>
+                    <div class="chat-view-info">
+                        <div class="chat-view-name" id="chatViewName"></div>
+                        <div class="chat-view-status" id="chatViewStatus">...</div>
+                    </div>
+                </div>
+                
+                <div class="messages-container" id="messagesContainer">
+                    <div class="empty-chat" id="emptyChatMessage">
+                        <div class="empty-chat-icon">💬</div>
+                        <div>ابدأ المحادثة الآن!</div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="messageInput" placeholder="اكتب رسالتك..." onkeypress="handleMessageKeyPress(event)">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rooms Tab -->
+        <div class="tab-content" id="tab-rooms">
+            <!-- Sub Tabs for Rooms -->
+            <div class="chat-sub-tabs" id="roomsSubTabs" style="display: none;">
+                <button class="chat-sub-tab active" onclick="switchChatSubTab('joined', this)">المنظم إليها</button>
+                <button class="chat-sub-tab" onclick="switchChatSubTab('private', this)">الخاصة</button>
+                <button class="chat-sub-tab" onclick="switchChatSubTab('suggestions', this)">مقترحات</button>
+                <button class="chat-sub-tab" onclick="switchChatSubTab('pending', this)">الطلبات</button>
+            </div>
+            
+            <!-- Joined Rooms -->
+            <div class="tab-content active" id="tab-joined">
+                <div class="rooms-section-header">
+                    <span class="rooms-section-title">الغرف المنظم إليها</span>
+                </div>
+                <div class="chat-list" id="joinedRoomsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <div class="empty-title">لا توجد غرف منظم إليها</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Private Rooms -->
+            <div class="tab-content" id="tab-private">
+                <div class="rooms-section-header">
+                    <span class="rooms-section-title">الغرف الخاصة</span>
+                </div>
+                <div class="chat-list" id="privateRoomsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔒</div>
+                        <div class="empty-title">لا توجد غرف خاصة</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Suggested Rooms -->
+            <div class="tab-content" id="tab-suggestions">
+                <div class="rooms-section-header">
+                    <span class="rooms-section-title">غرف مقترحة لك</span>
+                </div>
+                <div class="chat-list" id="suggestedRoomsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">💡</div>
+                        <div class="empty-title">لا توجد مقترحات</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Requests -->
+            <div class="tab-content" id="tab-pending" style="display: none;">
+                <div class="rooms-section-header">
+                    <span class="rooms-section-title">طلبات الانضمام المعلقة</span>
+                </div>
+                <div class="chat-list" id="pendingRequestsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">⏳</div>
+                        <div class="empty-title">لا توجد طلبات معلقة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <nav class="footer-nav">
+        <a href="home.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span>المواقع</span></a>
+        <a href="friends.html" class="nav-item"><span class="nav-icon">👥</span><span>الأصدقاء</span></a>
+        <a href="chat.html" class="nav-item active"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+    </nav>
+<div class="toast" id="toast"><span>✓</span><span id="toastMessage">تم!</span></div>
+    
+    <!-- Create Room Modal -->
+    <div class="create-room-modal-overlay" id="createRoomModal">
+        <div class="create-room-modal">
+            <div class="create-room-modal-header">
+                <div class="create-room-modal-title">إنشاء غرفة جديدة</div>
+                <button class="create-room-modal-close" onclick="closeCreateRoomModal()">✕</button>
+            </div>
+            <div class="create-room-modal-body">
+                <div class="form-group">
+                    <label class="form-label">صورة الغرفة (اختياري)</label>
+                    <div class="room-image-upload" id="roomImageUpload" onclick="document.getElementById('roomImageInput').click()">
+                        <div class="room-image-preview" id="roomImagePreview">
+                            <span class="room-image-icon">📷</span>
+                            <span class="room-image-text">إضافة صورة</span>
+                        </div>
+                        <img id="roomImageImg" style="display:none;" alt="صورة الغرفة">
+                    </div>
+                    <input type="file" id="roomImageInput" accept="image/*" style="display:none;" onchange="previewRoomImage(event)">
+                    <input type="hidden" id="roomImageUrl" value="">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">اسم الغرفة <span style="color: var(--error);">*</span></label>
+                    <input type="text" class="form-input" id="roomNameInput" placeholder="أدخل اسم الغرفة" maxlength="50">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">نبذة عن الغرفة</label>
+                    <textarea class="form-input" id="roomDescInput" placeholder="اكتب نبذة مختصرة عن الغرفة" rows="3" maxlength="200" style="resize: none;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">نوع الغرفة</label>
+                    <div class="room-type-selector">
+                        <div class="room-type-option active" data-type="public" onclick="selectRoomType('public')">
+                            <span class="room-type-icon">🌐</span>
+                            <span class="room-type-name">عام</span>
+                            <span class="room-type-desc">يمكن لأي شخص الانضمام</span>
+                        </div>
+                        <div class="room-type-option" data-type="private" onclick="selectRoomType('private')">
+                            <span class="room-type-icon">🔒</span>
+                            <span class="room-type-name">خاص</span>
+                            <span class="room-type-desc">يتطلب رمز للانضمام</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="privateCodeGroup" style="display: none;">
+                    <label class="form-label">رمز الغرفة</label>
+                    <div class="private-code-generation">
+                        <input type="text" class="form-input" id="roomCodeInput" placeholder="أدخل رمز مخصص أو اتركه فارغاً" maxlength="8">
+                        <button type="button" class="generate-code-btn" onclick="generateRandomCode()">🎲</button>
+                    </div>
+                    <div class="generated-code-display" id="generatedCodeDisplay" style="display: none;">
+                        <span>الرمز المولد:</span>
+                        <strong id="generatedCodeText"></strong>
+                    </div>
+                </div>
+
+                <div class="error-message" id="createRoomError">يرجى إدخال اسم الغرفة</div>
+            </div>
+            <div class="create-room-modal-footer">
+                <button class="create-room-cancel-btn" onclick="closeCreateRoomModal()">إلغاء</button>
+                <button class="create-room-submit-btn" onclick="createNewRoom()">إنشاء غرفة</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script type="module">
+        import { getFirestore, collection, onSnapshot, query, orderBy, where, getDocs, getDoc, addDoc, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const db = getFirestore(window.firebaseApps[0]);
+        const auth = getAuth(window.firebaseApps[0]);
+        
+        let currentUser = null;
+        let currentUserData = null;
+        let currentChatPartner = null;
+        let messagesUnsubscribe = null;
+        let sentJoinRequests = [];
+        let pendingRequestsData = [];
+        
+        // Get current user
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                await loadCurrentUserData();
+                await loadSentJoinRequests();
+                loadPrivateChats();
+                loadJoinedRooms();
+                loadPrivateRooms();
+                loadSuggestedRooms();
+                loadPendingRequests();
+                listenForRequestApprovals();
+            }
+        });
+        
+        // Load current user data
+        async function loadCurrentUserData() {
+            try {
+                const q = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    currentUserData = { id: doc.id, ...doc.data() };
+                });
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        }
+        
+        // Load sent join requests
+        async function loadSentJoinRequests() {
+            try {
+                const q = query(collection(db, 'roomJoinRequests'), where('userId', '==', currentUser.uid), where('status', '==', 'pending'));
+                const snapshot = await getDocs(q);
+                sentJoinRequests = [];
+                pendingRequestsData = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    sentJoinRequests.push(data.roomId);
+                    pendingRequestsData.push({ id: doc.id, ...data });
+                });
+            } catch (error) {
+                console.error("Error loading join requests:", error);
+            }
+        }
+        
+        // Load pending requests
+        function loadPendingRequests() {
+            const container = document.getElementById('pendingRequestsList');
+            if (!container) return;
+            
+            if (pendingRequestsData.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">لا توجد طلبات معلقة</div></div>';
+                return;
+            }
+            
+            let html = '';
+            pendingRequestsData.forEach(async (request) => {
+                try {
+                    const roomDoc = await getDoc(doc(db, 'chatRooms', request.roomId));
+                    if (roomDoc.exists()) {
+                        const roomData = roomDoc.data();
+                        html += `<div class="room-item">
+                            <div class="room-item-avatar">${roomData.type === 'private' ? '🔐' : '👥'}</div>
+                            <div class="room-item-info">
+                                <div class="room-item-name">${roomData.name}</div>
+                                <div class="room-item-meta">تم إرسال طلب الانضمام</div>
+                            </div>
+                            <span class="room-item-badge pending">بانتظار</span>
+                        </div>`;
+                        container.innerHTML = html;
+                    }
+                } catch (error) {
+                    console.error("Error loading room:", error);
+                }
+            });
+        }
+        
+        // Listen for request approvals
+        function listenForRequestApprovals() {
+            if (!currentUser) return;
+            
+            const q = query(collection(db, 'roomJoinRequests'), where('userId', '==', currentUser.uid));
+            
+            onSnapshot(q, (snapshot) => {
+                let hasChanges = false;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === 'approved') {
+                        hasChanges = true;
+                        showToast(`تم قبول طلبك في غرفة: ${data.roomName || 'غرفة'}`);
+                    }
+                });
+                
+                if (hasChanges) {
+                    loadSentJoinRequests();
+                    loadSuggestedRooms();
+                    loadJoinedRooms();
+                    loadPrivateRooms();
+                    loadPendingRequests();
+                }
+            });
+        }
+        
+        // ==================== PRIVATE CHAT FUNCTIONS ====================
+        
+        // Load private chats (friends list)
+        function loadPrivateChats() {
+            const chatsContainer = document.getElementById('privateChatsList');
+            if (!chatsContainer || !currentUser) return;
+            
+            const q = query(collection(db, 'friends'), where('userId', '==', currentUser.uid));
+            
+            onSnapshot(q, (snapshot) => {
+                let chats = [];
+                snapshot.forEach((doc) => {
+                    chats.push({ id: doc.id, ...doc.data() });
+                });
+                
+                if (chats.length === 0) {
+                    chatsContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">لا توجد محادثات بعد</div><p style="font-size: 13px; margin-top: 8px;">أضف أصدقاء وابدأ المحادثة!</p></div>';
+                    return;
+                }
+                
+                let html = '';
+                chats.forEach(chat => {
+                    const friendName = chat.friendName || 'مستخدم';
+                    const friendAvatar = chat.friendAvatar || '';
+                    const initials = friendName.split(' ').map(n => n[0]).join('').substring(0, 2);
+                    const avatarHtml = friendAvatar ? 
+                        `<img src="${friendAvatar}" alt="${friendName}">` : 
+                        `<span style="font-size: 20px; font-weight: 700; color: var(--primary);">${initials}</span>`;
+                    
+                    html += `<div class="chat-item" onclick="openPrivateChat('${chat.friendId}', '${encodeURIComponent(friendName)}', '${encodeURIComponent(chat.friendUsername || '')}')">
+                        <div class="chat-avatar">${avatarHtml}</div>
+                        <div class="chat-info">
+                            <div class="chat-name">${friendName}</div>
+                            <div class="chat-last-message">@${chat.friendUsername || 'user'}</div>
+                        </div>
+                    </div>`;
+                });
+                
+                chatsContainer.innerHTML = html;
+            }, (error) => {
+                console.error("Error loading chats:", error);
+            });
+        }
+        
+        // Open private chat
+        window.openPrivateChat = function(userId, userName, userUsername = '') {
+            const decodedName = decodeURIComponent(userName);
+            const decodedUsername = decodeURIComponent(userUsername);
+            
+            currentChatPartner = {
+                uid: userId,
+                name: decodedName,
+                username: decodedUsername
+            };
+            
+            // Update header
+            const avatarEl = document.getElementById('chatViewAvatar');
+            const initials = decodedName.split(' ').map(n => n[0]).join('').substring(0, 2);
+            avatarEl.innerHTML = `<span style="font-size: 16px; font-weight: 700; color: var(--primary);">${initials}</span>`;
+            
+            document.getElementById('chatViewName').textContent = decodedName;
+            document.getElementById('chatViewStatus').textContent = '@' + (decodedUsername || 'user');
+            
+            // Show chat view, hide list
+            document.getElementById('chatListView').style.display = 'none';
+            document.getElementById('chatView').classList.add('active');
+            
+            // Load messages
+            loadMessages(userId);
+        };
+        
+        // Load messages
+        function loadMessages(partnerId) {
+            const container = document.getElementById('messagesContainer');
+            
+            if (messagesUnsubscribe) {
+                messagesUnsubscribe();
+            }
+            
+            // Create chat ID (sorted user IDs)
+            const chatId = [currentUser.uid, partnerId].sort().join('_');
+            
+            const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
+            
+            messagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                let html = '';
+                let hasMessages = false;
+                let lastDate = '';
+                
+                snapshot.forEach((doc) => {
+                    hasMessages = true;
+                    const msg = doc.data();
+                    const messageDate = msg.createdAt ? msg.createdAt.toDate().toLocaleDateString('ar-SA') : '';
+                    
+                    if (messageDate !== lastDate) {
+                        html += `<div class="date-separator">${formatMessageDate(msg.createdAt)}</div>`;
+                        lastDate = messageDate;
+                    }
+                    
+                    const isSent = msg.senderId === currentUser.uid;
+                    const time = msg.createdAt ? msg.createdAt.toDate().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    html += `<div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble">${escapeHtml(msg.text)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>`;
+                });
+                
+                if (!hasMessages) {
+                    container.innerHTML = '<div class="empty-chat"><div class="empty-chat-icon">💬</div><div>ابدأ المحادثة الآن!</div></div>';
+                } else {
+                    container.innerHTML = html;
+                    container.scrollTop = container.scrollHeight;
+                }
+            }, (error) => {
+                console.error("Error loading messages:", error);
+                container.innerHTML = '<div class="empty-chat"><div class="empty-chat-icon">⚠️</div><div>خطأ في تحميل الرسائل</div></div>';
+            });
+        }
+        
+        // Send message
+        window.sendMessage = async function() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentChatPartner || !currentUser) return;
+            
+            input.value = '';
+            
+            try {
+                const chatId = [currentUser.uid, currentChatPartner.uid].sort().join('_');
+                
+                await addDoc(collection(db, 'chats', chatId, 'messages'), {
+                    text: text,
+                    senderId: currentUser.uid,
+                    senderName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
+                    receiverId: currentChatPartner.uid,
+                    createdAt: serverTimestamp()
+                });
+                
+                const container = document.getElementById('messagesContainer');
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+                
+            } catch (error) {
+                console.error("Error sending message:", error);
+                showToast('فشل إرسال الرسالة', 'error');
+            }
+        };
+        
+        window.handleMessageKeyPress = function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        };
+        
+        window.closeChatView = function() {
+            if (messagesUnsubscribe) {
+                messagesUnsubscribe();
+                messagesUnsubscribe = null;
+            }
+            currentChatPartner = null;
+            document.getElementById('chatView').classList.remove('active');
+            document.getElementById('chatListView').style.display = 'block';
+            document.getElementById('messageInput').value = '';
+        };
+        
+        // ==================== ROOM FUNCTIONS ====================
+        
+        function loadJoinedRooms() {
+            const roomsContainer = document.getElementById('joinedRoomsList');
+            if (!roomsContainer) return;
+            
+            const q = query(collection(db, 'chatRooms'), where('type', '==', 'public'));
+            
+            onSnapshot(q, (snapshot) => {
+                let rooms = [];
+                snapshot.forEach((doc) => {
+                    const roomData = doc.data();
+                    if (roomData.members && roomData.members.includes(currentUser ? currentUser.uid : '')) {
+                        rooms.push({ id: doc.id, ...roomData });
+                    }
+                });
+                
+                if (rooms.length === 0) {
+                    roomsContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">لا توجد غرف منظم إليها</div></div>';
+                    return;
+                }
+                
+                let html = '';
+                rooms.forEach(room => {
+                    const memberCount = room.members ? room.members.length : 0;
+                    html += `<div class="room-item" onclick="showToast('افتح الغرفة من الرئيسية')">
+                        <div class="room-item-avatar">${room.type === 'private' ? '🔐' : '👥'}</div>
+                        <div class="room-item-info">
+                            <div class="room-item-name">${room.name}</div>
+                            <div class="room-item-meta">${memberCount} عضو</div>
+                        </div>
+                        <span class="room-item-badge joined">منظم</span>
+                    </div>`;
+                });
+                
+                roomsContainer.innerHTML = html;
+            });
+        }
+        
+        function loadPrivateRooms() {
+            const roomsContainer = document.getElementById('privateRoomsList');
+            if (!roomsContainer) return;
+            
+            const q = query(collection(db, 'chatRooms'), where('type', '==', 'private'));
+            
+            onSnapshot(q, (snapshot) => {
+                let rooms = [];
+                snapshot.forEach((doc) => {
+                    const roomData = doc.data();
+                    if (roomData.members && roomData.members.includes(currentUser ? currentUser.uid : '')) {
+                        rooms.push({ id: doc.id, ...roomData });
+                    }
+                });
+                
+                if (rooms.length === 0) {
+                    roomsContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-title">لا توجد غرف خاصة</div></div>';
+                    return;
+                }
+                
+                let html = '';
+                rooms.forEach(room => {
+                    const memberCount = room.members ? room.members.length : 0;
+                    html += `<div class="room-item">
+                        <div class="room-item-avatar">🔐</div>
+                        <div class="room-item-info">
+                            <div class="room-item-name">${room.name}</div>
+                            <div class="room-item-meta">${memberCount} عضو</div>
+                        </div>
+                        <span class="room-item-badge private">خاصة</span>
+                    </div>`;
+                });
+                
+                roomsContainer.innerHTML = html;
+            });
+        }
+        
+        function loadSuggestedRooms() {
+            const roomsContainer = document.getElementById('suggestedRoomsList');
+            if (!roomsContainer) return;
+            
+            const q = query(collection(db, 'chatRooms'), orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snapshot) => {
+                let rooms = [];
+                const userId = currentUser ? currentUser.uid : '';
+                
+                snapshot.forEach((doc) => {
+                    const roomData = doc.data();
+                    const isMember = roomData.members && roomData.members.includes(userId);
+                    const isOwner = roomData.createdBy === userId;
+                    
+                    if (!isMember && !isOwner) {
+                        rooms.push({ id: doc.id, ...roomData });
+                    }
+                });
+                
+                const suggestedRooms = rooms.slice(0, 20);
+                
+                if (suggestedRooms.length === 0) {
+                    roomsContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">💡</div><div class="empty-title">لا توجد مقترحات</div></div>';
+                    return;
+                }
+                
+                let html = '';
+                suggestedRooms.forEach(room => {
+                    const memberCount = room.members ? room.members.length : 0;
+                    const isPrivate = room.type === 'private';
+                    const hasRequested = sentJoinRequests.includes(room.id);
+                    
+                    html += `<div class="room-item">
+                        <div class="room-item-avatar">${isPrivate ? '🔐' : '👥'}</div>
+                        <div class="room-item-info">
+                            <div class="room-item-name">${room.name}</div>
+                            <div class="room-item-meta">${memberCount} عضو${hasRequested ? ' • طلبك قيد الانتظار' : ''}</div>
+                        </div>
+                        <span class="room-item-badge ${isPrivate ? 'private' : 'suggested'}">${isPrivate ? 'خاصة' : 'عام'}</span>
+                        ${hasRequested ? 
+                            `<span class="room-item-badge pending">بانتظار</span>` :
+                            (isPrivate ? 
+                                `<button class="room-action-btn request-sent" onclick="event.stopPropagation(); requestJoinPrivateRoom('${room.id}', '${encodeURIComponent(room.name)}', '${room.code || ''}')">طلب</button>` :
+                                `<button class="room-action-btn join" onclick="event.stopPropagation(); joinPublicRoom('${room.id}', '${encodeURIComponent(room.name)}')">انضمام</button>`
+                            )
+                        }
+                    </div>`;
+                });
+                
+                roomsContainer.innerHTML = html;
+            });
+        }
+        
+        window.joinPublicRoom = async function(roomId, roomName) {
+            if (!currentUser) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            try {
+                const roomDoc = await getDoc(doc(db, 'chatRooms', roomId));
+                if (!roomDoc.exists()) {
+                    showToast('الغرفة غير موجودة', 'error');
+                    return;
+                }
+                
+                const roomData = roomDoc.data();
+                let members = roomData.members || [];
+                
+                if (!members.includes(currentUser.uid)) {
+                    members.push(currentUser.uid);
+                    await updateDoc(doc(db, 'chatRooms', roomId), { members: members });
+                }
+                
+                showToast('تم الانضمام للغرفة بنجاح!');
+                loadSuggestedRooms();
+                loadJoinedRooms();
+            } catch (error) {
+                console.error("Error joining room:", error);
+                showToast('فشل الانضمام للغرفة', 'error');
+            }
+        };
+        
+        window.requestJoinPrivateRoom = async function(roomId, roomName, roomCode) {
+            if (!currentUser) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            const code = prompt(`أدخل رمز الغرفة "${decodeURIComponent(roomName)}":`);
+            if (!code) return;
+            
+            if (code !== roomCode) {
+                showToast('الرمز غير صحيح', 'error');
+                return;
+            }
+            
+            try {
+                const roomDoc = await getDoc(doc(db, 'chatRooms', roomId));
+                if (roomDoc.exists()) {
+                    const roomData = roomDoc.data();
+                    let members = roomData.members || [];
+                    
+                    if (!members.includes(currentUser.uid)) {
+                        members.push(currentUser.uid);
+                        await updateDoc(doc(db, 'chatRooms', roomId), { members: members });
+                    }
+                    
+                    showToast('تم الانضمام للغرفة بنجاح!');
+                    loadSuggestedRooms();
+                    loadPrivateRooms();
+                }
+            } catch (error) {
+                console.error("Error joining private room:", error);
+                showToast('فشل الانضمام للغرفة', 'error');
+            }
+        };
+        
+        // ==================== UI FUNCTIONS ====================
+        
+        window.switchChatMainTab = function(tabName, element) {
+            closeChatView();
+            
+            document.querySelectorAll('.chat-main-tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.querySelectorAll('#tab-chats, #tab-rooms').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            const subTabs = document.getElementById('roomsSubTabs');
+            if (subTabs) {
+                subTabs.style.display = tabName === 'rooms' ? 'flex' : 'none';
+            }
+            
+            if (tabName === 'rooms') {
+                document.getElementById('tab-suggestions').style.display = 'block';
+                document.getElementById('tab-joined').style.display = 'block';
+                document.getElementById('tab-private').style.display = 'block';
+            }
+        };
+        
+        window.switchChatSubTab = function(tabName, element) {
+            document.querySelectorAll('.chat-sub-tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.getElementById('tab-joined').style.display = 'none';
+            document.getElementById('tab-private').style.display = 'none';
+            document.getElementById('tab-suggestions').style.display = 'none';
+            document.getElementById('tab-pending').style.display = 'none';
+            
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+            }
+        };
+        
+        // Create room functions
+        window.showCreateRoomModal = function() {
+            document.getElementById('roomNameInput').value = '';
+            document.getElementById('roomDescInput').value = '';
+            document.getElementById('roomCodeInput').value = '';
+            document.getElementById('roomImageUrl').value = '';
+            document.getElementById('roomImageImg').style.display = 'none';
+            document.getElementById('roomImagePreview').style.display = 'flex';
+            document.getElementById('generatedCodeDisplay').style.display = 'none';
+            document.getElementById('createRoomError').classList.remove('show');
+            
+            document.querySelectorAll('.room-type-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector('.room-type-option[data-type="public"]').classList.add('active');
+            document.getElementById('privateCodeGroup').style.display = 'none';
+            
+            document.getElementById('createRoomModal').classList.add('active');
+        };
+        
+        window.closeCreateRoomModal = function() {
+            document.getElementById('createRoomModal').classList.remove('active');
+        };
+        
+        window.selectRoomType = function(type) {
+            document.querySelectorAll('.room-type-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector('.room-type-option[data-type="' + type + '"]').classList.add('active');
+            document.getElementById('privateCodeGroup').style.display = type === 'private' ? 'block' : 'none';
+        };
+        
+        window.generateRandomCode = function() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('roomCodeInput').value = code;
+            document.getElementById('generatedCodeText').textContent = code;
+            document.getElementById('generatedCodeDisplay').style.display = 'block';
+        };
+        
+        window.previewRoomImage = function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('roomImageImg').src = e.target.result;
+                    document.getElementById('roomImageImg').style.display = 'block';
+                    document.getElementById('roomImagePreview').style.display = 'none';
+                    document.getElementById('roomImageUrl').value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        
+        window.createNewRoom = async function() {
+            const name = document.getElementById('roomNameInput').value.trim();
+            const description = document.getElementById('roomDescInput').value.trim();
+            const imageUrl = document.getElementById('roomImageUrl').value;
+            const type = document.querySelector('.room-type-option.active').dataset.type;
+            const codeInput = document.getElementById('roomCodeInput').value.trim();
+            
+            if (!name) {
+                document.getElementById('createRoomError').textContent = 'يرجى إدخال اسم الغرفة';
+                document.getElementById('createRoomError').classList.add('show');
+                return;
+            }
+            
+            let code = '';
+            if (type === 'private') {
+                if (codeInput) {
+                    code = codeInput;
+                } else {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                    for (let i = 0; i < 6; i++) {
+                        code += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                }
+            }
+            
+            if (!currentUser) {
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            try {
+                await addDoc(collection(db, 'chatRooms'), {
+                    name: name,
+                    description: description,
+                    image: imageUrl,
+                    type: type,
+                    code: code,
+                    requireApproval: true,
+                    createdBy: currentUser.uid,
+                    members: [currentUser.uid],
+                    isGroup: true,
+                    createdAt: serverTimestamp()
+                });
+                
+                showToast('تم إنشاء الغرفة بنجاح!');
+                closeCreateRoomModal();
+                loadJoinedRooms();
+                loadPrivateRooms();
+                loadSuggestedRooms();
+            } catch (error) {
+                console.error("Error creating room:", error);
+                showToast('فشل إنشاء الغرفة', 'error');
+            }
+        };
+        
+        document.getElementById('createRoomModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateRoomModal();
+            }
+        });
+        
+        // Helper functions
+        function formatMessageDate(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate();
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'اليوم';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'أمس';
+            } else {
+                return date.toLocaleDateString('ar-SA', { day: 'numeric', month: 'long' });
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Check URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'rooms') {
+            setTimeout(() => {
+                const btn = document.querySelectorAll('.chat-main-tab')[1];
+                if (btn) switchChatMainTab('rooms', btn);
+            }, 100);
+        }
+        
+        if (urlParams.get('create') === 'true') {
+            setTimeout(() => {
+                showCreateRoomModal();
+            }, 500);
+        }
+
+        initTheme();
+    </script>
+</body>
+</html>
+

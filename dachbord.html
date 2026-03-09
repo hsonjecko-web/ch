@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة التحكم - المستخدمين</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300,400,500,700,800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0",
+            authDomain: "chat-94032.firebaseapp.com",
+            projectId: "chat-94032",
+            storageBucket: "chat-94032.firebasestorage.app",
+            messagingSenderId: "920803161623",
+            appId: "1:920803161623:web:a2995a99c07b42af1d0e52"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase available globally
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        window.firestoreFunctions = { collection, getDocs, onSnapshot, deleteDoc, doc, query, orderBy };
+        window.authFunctions = { onAuthStateChanged, signOut };
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2c5282;
+            --primary-dark: #152a45;
+            --secondary: #c9a227;
+            --secondary-light: #d4b43a;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --surface-alt: #f1f5f9;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --error: #dc2626;
+            --success: #059669;
+            --warning: #d97706;
+            --info: #0284c7;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --primary-dark: #1d4ed8;
+            --secondary: #fbbf24;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-alt: #334155;
+            --text: #f8fafc;
+            --text-light: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: #475569;
+        }
+
+        body {
+            background-color: var(--background);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 24px;
+        }
+
+        .header-title {
+            color: white;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .header-btn.danger {
+            background: var(--error);
+            border-color: var(--error);
+        }
+
+        .header-btn.danger:hover {
+            background: #b91c1c;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .stat-icon.blue {
+            background: rgba(30, 58, 95, 0.1);
+            color: var(--primary);
+        }
+
+        .stat-icon.green {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.orange {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-icon.red {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 100px;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Search Box */
+        .search-container {
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 500px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+
+        /* Users Table */
+        .table-container {
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 60px 2fr 1.5fr 1fr 1fr 1fr 100px;
+            padding: 16px 20px;
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 60px 2fr 1.5fr 1fr 1fr 1fr 100px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .table-row:hover {
+            background: var(--surface-alt);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .user-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .user-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .user-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .meta-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+        }
+
+        .status-badge.inactive {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-badge.active .status-dot {
+            background: var(--success);
+        }
+
+        .status-badge.inactive .status-dot {
+            background: var(--text-muted);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .action-btn.view {
+            background: rgba(30, 58, 95, 0.1);
+            color: var(--primary);
+        }
+
+        .action-btn.view:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-btn.delete {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        .action-btn.delete:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        /* User Detail Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: var(--surface-alt);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .detail-item {
+            background: var(--surface-alt);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        /* Loading State */
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--surface-alt);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin: 0 auto 20px;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: var(--shadow-xl);
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--error);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .table-header, .table-row {
+                grid-template-columns: 60px 2fr 1.5fr 1fr 1fr 100px;
+            }
+            
+            .table-header > :nth-child(5),
+            .table-row > :nth-child(6) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .table-header, .table-row {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .table-header {
+                display: none;
+            }
+
+            .table-row {
+                position: relative;
+                padding: 20px;
+            }
+
+            .action-btns {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-brand">
+            <!-- <div class="header-icon">⚙️</div> -->
+
+            
+            <div>
+                <div class="header-title">لوحة التحكم</div>
+                <div class="header-subtitle">إدارة المستخدمين والبيانات</div>
+            </div>
+        </div>
+        <div class="header-content">
+            <a href="home.html" class="back-btn">🏠
+            <span class="header-title">الرجوع الى الرئيسية</span>
+        </a>
+        </div>
+        <div class="header-actions">
+            <!-- <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">☀️</button> -->
+            <button class="header-btn" onclick="refreshData()">
+                🔄 تحديث
+            </button>
+            <!-- <button class="header-btn danger" onclick="logout()">
+                🚪 تسجيل خروج
+            </button> -->
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div class="stat-info">
+                <h3>إجمالي المستخدمين</h3>
+                <div class="stat-value" id="totalUsers">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+                <h3>المستخدمين النشطين</h3>
+                <div class="stat-value" id="activeUsers">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">📅</div>
+            <div class="stat-info">
+                <h3>التسجيلات اليوم</h3>
+                <div class="stat-value" id="todayUsers">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">🚫</div>
+            <div class="stat-info">
+                <h3>الحسابات المحظورة</h3>
+                <div class="stat-value" id="blockedUsers">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <div class="section-header">
+            <h2 class="section-title">
+                📋 قائمة المستخدمين المسجلين
+            </h2>
+            <div class="filter-container">
+                <button class="filter-btn active" onclick="filterUsers('all')">الكل</button>
+                <button class="filter-btn" onclick="filterUsers('today')">اليوم</button>
+                <button class="filter-btn" onclick="filterUsers('week')">هذا الأسبوع</button>
+                <button class="filter-btn" onclick="filterUsers('month')">هذا الشهر</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="البحث بالاسم أو البريد أو رقم الهاتف..." oninput="searchUsers()">
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-container" id="loadingState">
+            <div class="spinner"></div>
+            <div class="loading-text">جاري تحميل البيانات...</div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">📭</div>
+            <div class="empty-title">لا توجد بيانات</div>
+            <div class="empty-text">لم يتم تسجيل أي مستخدمين بعد</div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container" id="tableContainer" style="display: none;">
+            <div class="table-header">
+                <div>#</div>
+                <div>المستخدم</div>
+                <div>معلومات الاتصال</div>
+                <div>البلد</div>
+                <div>تاريخ التسجيل</div>
+                <div>الحالة</div>
+                <div>الإجراءات</div>
+            </div>
+            <div id="usersTableBody">
+                <!-- Users will be loaded here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- User Detail Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">🔍 تفاصيل المستخدم</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid" id="modalContent">
+                    <!-- Details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span>✓</span>
+        <span id="toastMessage">تم بنجاح!</span>
+    </div>
+
+    <script type="module">
+        // Wait for Firebase to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const db = window.firebaseDb;
+        const auth = window.firebaseAuth;
+        const { collection, getDocs, onSnapshot, deleteDoc, doc, query, orderBy } = window.firestoreFunctions;
+        const { onAuthStateChanged, signOut } = window.authFunctions;
+
+        let allUsers = [];
+        let currentFilter = 'all';
+
+        // Check auth state
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // Redirect to login if not authenticated
+                // window.location.href = 'index.html';
+            }
+        });
+
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        window.toggleTheme = toggleTheme;
+
+        // Load Users from Firebase
+        async function loadUsers() {
+            try {
+                showLoading(true);
+                
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, orderBy('createdAt', 'desc'));
+                
+                // Real-time listener
+                onSnapshot(q, (snapshot) => {
+                    allUsers = [];
+                    snapshot.forEach((doc) => {
+                        const userData = doc.data();
+                        allUsers.push({
+                            id: doc.id,
+                            ...userData,
+                            createdAt: userData.createdAt ? userData.createdAt.toDate() : new Date()
+                        });
+                    });
+                    
+                    updateStats();
+                    renderUsers(allUsers);
+                    showLoading(false);
+                }, (error) => {
+                    console.error("Error loading users:", error);
+                    showToast('خطأ في تحميل البيانات', 'error');
+                    showLoading(false);
+                });
+                
+            } catch (error) {
+                console.error("Error:", error);
+                showToast('حدث خطأ غير متوقع', 'error');
+                showLoading(false);
+            }
+        }
+
+        function updateStats() {
+            const total = allUsers.length;
+            const active = allUsers.filter(u => u.isActive !== false).length;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayCount = allUsers.filter(u => u.createdAt >= today).length;
+            
+            const blocked = allUsers.filter(u => u.isBlocked === true).length;
+            
+            document.getElementById('totalUsers').textContent = total;
+            document.getElementById('activeUsers').textContent = active;
+            document.getElementById('todayUsers').textContent = todayCount;
+            document.getElementById('blockedUsers').textContent = blocked;
+        }
+
+        function renderUsers(users) {
+            const container = document.getElementById('usersTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (users.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+            
+            let html = '';
+            for (let i = 0; i < users.length; i++) {
+                const user = users[i];
+                const index = i + 1;
+                const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2) : '👤';
+                const isActive = user.isActive !== false;
+                const dateStr = formatDate(user.createdAt);
+                
+                html += `
+                    <div class="table-row">
+                        <div class="user-avatar">${initials}</div>
+                        <div class="user-info">
+                            <h4>${user.fullName || 'غير معروف'}</h4>
+                            <p>@${user.username || 'unknown'}</p>
+                        </div>
+                        <div class="user-meta">
+                            <div class="meta-item">
+                                <span class="meta-icon">📱</span>
+                                <span>${user.phoneCode || ''} ${user.phoneNumber || 'غير متوفر'}</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">🌍</span>
+                            <span>${user.country || 'غير محدد'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📅</span>
+                            <span>${dateStr}</span>
+                        </div>
+                        <div>
+                            <span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                                <span class="status-dot"></span>
+                                ${isActive ? 'نشط' : 'غير نشط'}
+                            </span>
+                        </div>
+                        <div class="action-btns">
+                            <button class="action-btn view" onclick="viewUserDetails('${user.id}')" title="عرض التفاصيل">
+                                👁️
+                            </button>
+                            <button class="action-btn delete" onclick="deleteUser('${user.id}')" title="حذف">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function formatDate(date) {
+            if (!date) return 'غير معروف';
+            
+            const d = new Date(date);
+            const now = new Date();
+            const diff = now - d;
+            
+            // If less than 24 hours
+            if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                if (hours < 1) return 'منذ دقائق';
+                return 'منذ ' + hours + ' ساعة';
+            }
+            
+            // If today
+            if (d.toDateString() === now.toDateString()) {
+                return 'اليوم ' + d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // If yesterday
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (d.toDateString() === yesterday.toDateString()) {
+                return 'أمس';
+            }
+            
+            return d.toLocaleDateString('ar-SA');
+        }
+
+        // View User Details
+        window.viewUserDetails = function(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            const modal = document.getElementById('userModal');
+            const content = document.getElementById('modalContent');
+            
+            const details = [
+                { label: 'الاسم الكامل', value: user.fullName || 'غير متوفر', icon: '👤' },
+                { label: 'اسم المستخدم', value: '@' + (user.username || 'unknown'), icon: '🔗' },
+                { label: 'كلمة المرور', value: user.password || 'غير متوفرة', icon: '🔑' },
+                { label: 'تاريخ الميلاد', value: user.birthDate || 'غير متوفر', icon: '🎂' },
+                { label: 'الدولة', value: user.country || 'غير محدد', icon: '🌍' },
+                { label: 'كود الدولة', value: user.phoneCode || 'غير محدد', icon: '🏳️' },
+                { label: 'رقم الهاتف', value: user.phoneNumber || 'غير متوفر', icon: '📱' },
+                { label: 'تاريخ التسجيل', value: user.createdAt ? user.createdAt.toLocaleString('ar-SA') : 'غير معروف', icon: '📅' },
+                { label: 'آخر تسجيل دخول', value: user.lastLogin ? user.lastLogin.toDate().toLocaleString('ar-SA') : 'غير معروف', icon: '🕐' },
+                { label: 'حالة الحساب', value: user.isActive !== false ? 'نشط' : 'غير نشط', icon: user.isActive !== false ? '✅' : '❌' },
+                { label: 'حالة الحظر', value: user.isBlocked === true ? 'محظور' : 'غير محظور', icon: user.isBlocked === true ? '🚫' : '✅' },
+                { label: 'معرف المستخدم', value: user.id, icon: '🆔' }
+            ];
+            
+            let html = '';
+            for (let i = 0; i < details.length; i++) {
+                const d = details[i];
+                html += `
+                    <div class="detail-item">
+                        <div class="detail-label">${d.icon} ${d.label}</div>
+                        <div class="detail-value">${d.value}</div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+            modal.classList.add('show');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('userModal').classList.remove('show');
+        };
+
+        // Delete User
+        window.deleteUser = async function(userId) {
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.')) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, 'users', userId));
+                showToast('تم حذف المستخدم بنجاح', 'success');
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                showToast('فشل حذف المستخدم', 'error');
+            }
+        };
+
+        // Search Users
+        window.searchUsers = function() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderUsers(allUsers);
+                return;
+            }
+            
+            const filtered = allUsers.filter(user => {
+                return (user.fullName && user.fullName.toLowerCase().includes(searchTerm)) ||
+                       (user.username && user.username.toLowerCase().includes(searchTerm)) ||
+                       (user.phoneNumber && user.phoneNumber.includes(searchTerm));
+            });
+            
+            renderUsers(filtered);
+        };
+
+        // Filter Users
+        window.filterUsers = function(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            let filtered = allUsers;
+            const now = new Date();
+            
+            if (filter === 'today') {
+                const today = new Date(now);
+                today.setHours(0, 0, 0, 0);
+                filtered = allUsers.filter(u => u.createdAt >= today);
+            } else if (filter === 'week') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                filtered = allUsers.filter(u => u.createdAt >= weekAgo);
+            } else if (filter === 'month') {
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                filtered = allUsers.filter(u => u.createdAt >= monthAgo);
+            }
+            
+            renderUsers(filtered);
+        };
+
+        // Refresh Data
+        window.refreshData = function() {
+            loadUsers();
+            showToast('تم تحديث البيانات', 'success');
+        };
+
+        // Logout
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                showToast('فشل تسجيل الخروج', 'error');
+            }
+        };
+
+        // Show/Hide Loading
+        function showLoading(show) {
+            document.getElementById('loadingState').style.display = show ? 'block' : 'none';
+        }
+
+        // Toast Notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = 'toast ' + type;
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        window.showToast = showToast;
+
+        // Close modal on outside click
+        document.getElementById('userModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        initTheme();
+        loadUsers();
+    </script>
+</body>
+</html>

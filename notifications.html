@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الإشعارات</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { padding-bottom: 80px; }
+        .notification-item { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 12px; }
+        .notification-item.unread { border-right: 4px solid var(--primary); }
+        .notif-avatar { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 3px solid var(--border); background: var(--surface-alt); display: flex; align-items: center; justify-content: center; }
+        .notif-content { flex: 1; }
+        .notif-text { font-size: 14px; margin-bottom: 4px; }
+        .notif-text strong { font-weight: 700; }
+        .notif-time { font-size: 12px; color: var(--text-muted); }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = { apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0", authDomain: "chat-94032.firebaseapp.com", projectId: "chat-94032", storageBucket: "chat-94032.firebasestorage.app", messagingSenderId: "920803161623", appId: "1:920803161623:web:a2995a99c07b42af1d0e52" };
+        const app = initializeApp(firebaseConfig);
+        window.firebaseApps = [app];
+    </script>
+</head>
+<body>
+    <header class="header">
+        <a href="home.html" class="back-btn">→</a>
+        <span class="header-title">الإشعارات</span>
+    </header>
+    <main class="main-content">
+        <div class="section-title" style="margin-bottom:16px;">📩 طلبات الصداقة</div>
+        <div id="friendRequestsList">
+            <div class="empty-state"><div class="empty-icon">📩</div><div class="empty-title">لا توجد طلبات</div></div>
+        </div>
+    </main>
+    <nav class="footer-nav">
+        <a href="home.html" class="nav-item"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
+        <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span>المواقع</span></a>
+        <a href="friends.html" class="nav-item"><span class="nav-icon">👥</span><span>الأصدقاء</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+    </nav>
+    <div class="toast" id="toast"><span>✓</span><span id="toastMessage">تم!</span></div>
+    <script src="app.js"></script>
+    <script>initTheme();</script>
+</body>
+</html>
+

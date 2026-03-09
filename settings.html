@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الإعدادات - الملف الشخصي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0",
+            authDomain: "chat-94032.firebaseapp.com",
+            projectId: "chat-94032",
+            storageBucket: "chat-94032.firebasestorage.app",
+            messagingSenderId: "920803161623",
+            appId: "1:920803161623:web:a2995a99c07b42af1d0e52"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2c5282;
+            --primary-dark: #152a45;
+            --secondary: #c9a227;
+            --secondary-light: #d4b43a;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --surface-alt: #f1f5f9;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --error: #dc2626;
+            --success: #059669;
+            --warning: #d97706;
+            --info: #0284c7;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --primary-dark: #1d4ed8;
+            --secondary: #fbbf24;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-alt: #334155;
+            --text: #f8fafc;
+            --text-light: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: #475569;
+        }
+
+        body {
+            background-color: var(--background);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.1;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .header-title {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1;
+        }
+
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Profile Header Card */
+        .profile-header {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            opacity: 0.1;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            border: 4px solid var(--primary);
+            overflow: hidden;
+            position: relative;
+            background: var(--surface-alt);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-avatar-placeholder {
+            font-size: 40px;
+            color: var(--primary);
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .profile-username {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Section with Icon */
+        .icon-section {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .icon-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .icon-section-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .icon-section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+        }
+
+        .form-input:disabled {
+            background: var(--surface-alt);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Country Select */
+        .country-select {
+            position: relative;
+        }
+
+        .country-trigger {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+
+        .country-trigger.active {
+            border-color: var(--primary);
+        }
+
+        .country-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .country-flag {
+            font-size: 20px;
+        }
+
+        .dropdown-arrow {
+            color: var(--text-muted);
+            transition: transform 0.3s;
+        }
+
+        .country-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .country-dropdown.show {
+            display: block;
+        }
+
+        .country-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.3s;
+        }
+
+        .country-item:hover {
+            background: var(--surface-alt);
+        }
+
+        /* Action Buttons */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .btn-logout:hover {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 2px solid var(--error);
+            color: var(--error);
+        }
+
+        .btn-danger:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .spinner.show {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Confirm Dialog */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .confirm-overlay.show {
+            display: flex;
+        }
+
+        .confirm-dialog {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            animation: dialogSlide 0.3s ease;
+        }
+
+        @keyframes dialogSlide {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .confirm-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .confirm-icon.warning {
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .confirm-icon.info {
+            background: rgba(30, 58, 95, 0.1);
+        }
+
+        .confirm-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .confirm-message {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .confirm-btn.cancel {
+            background: var(--surface-alt);
+            color: var(--text);
+        }
+
+        .confirm-btn.cancel:hover {
+            background: var(--border);
+        }
+
+        .confirm-btn.confirm {
+            color: white;
+        }
+
+        .confirm-btn.confirm.danger {
+            background: var(--error);
+        }
+
+        .confirm-btn.confirm.danger:hover {
+            background: #b91c1c;
+        }
+
+        .confirm-btn.confirm.primary {
+            background: var(--primary);
+        }
+
+        .confirm-btn.confirm.primary:hover {
+            background: var(--primary-light);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--success);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: var(--shadow-xl);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.error {
+            background: var(--error);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Footer Navigation */
+        .footer-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: rgba(30, 58, 95, 0.1);
+        }
+
+        [data-theme="dark"] .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Generated Codes Section */
+        .generated-codes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .generated-code-item {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.3s;
+        }
+
+        .generated-code-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .generated-code-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .generated-code-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .generated-code-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .generated-code-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .generated-code-type {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .generated-code-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .generated-code-badge.public {
+            background: rgba(2, 132, 199, 0.1);
+            color: var(--info);
+        }
+
+        .generated-code-badge.private {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning);
+        }
+
+        .generated-code-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .generated-code-value span {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .copy-code-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .copy-code-btn:hover {
+            background: var(--primary-light);
+        }
+
+        .generated-code-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .generated-code-empty-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--surface-alt);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 16px;
+        }
+
+        .generated-code-empty-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="home.html" class="back-btn">→</a>
+            <span class="header-title">الإعدادات</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">
+                <span class="profile-avatar-placeholder">👤</span>
+            </div>
+            <div class="profile-name" id="displayFullName">...</div>
+            <div class="profile-username" id="displayUsername">@...</div>
+        </div>
+
+        <!-- Profile Section with Icon -->
+        <div class="icon-section">
+            <div class="icon-section-header">
+                <div class="icon-section-icon">👤</div>
+                <span class="icon-section-title">الملف الشخصي</span>
+            </div>
+            
+            <form id="profileForm" onsubmit="saveProfile(event)">
+                <div class="form-group">
+                    <label class="form-label">الاسم الكامل <span style="color: var(--error);">*</span></label>
+                    <input type="text" class="form-input" id="fullName" placeholder="الاسم الكامل" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">اسم المستخدم</label>
+                    <input type="text" class="form-input" id="username" placeholder="اسم المستخدم" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">كلمة المرور الجديدة</label>
+                    <input type="password" class="form-input" id="password" placeholder="كلمة المرور الجديدة">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">تأكيد كلمة المرور</label>
+                    <input type="password" class="form-input" id="confirmPassword" placeholder="تأكيد كلمة المرور">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">تاريخ الميلاد</label>
+                    <input type="date" class="form-input" id="birthDate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">الدولة</label>
+                    <div class="country-select" id="countrySelect">
+                        <div class="country-trigger" onclick="toggleCountryList()">
+                            <div class="country-info">
+                                <span class="country-flag" id="selectedFlag">🇸🇦</span>
+                                <span id="selectedCountry">المملكة العربية السعودية</span>
+                            </div>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="country-dropdown" id="countryDropdown">
+                            <div id="countriesContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="phoneNumber" placeholder="5xxxxxxxx">
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <span>💾 حفظ المعلومات</span>
+                    <span class="spinner" id="saveSpinner"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Account Actions -->
+        <div class="icon-section">
+            <div class="icon-section-header">
+                <div class="icon-section-icon">⚙️</div>
+                <span class="icon-section-title">إعدادات الحساب</span>
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-logout" onclick="showConfirmLogout()">
+                    <span>🚪 تسجيل خروج</span>
+                </button>
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-danger" onclick="showConfirmDelete()">
+                    <span>🗑️ حذف الحساب</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Generated Codes Section -->
+        <div class="icon-section" id="generatedCodesSection">
+            <div class="icon-section-header">
+                <div class="icon-section-icon">🔑</div>
+                <span class="icon-section-title">الكواد المولدة</span>
+            </div>
+            <div class="generated-codes-list" id="generatedCodesList">
+                <div class="generated-code-empty">
+                    <div class="generated-code-empty-icon">🔐</div>
+                    <div class="generated-code-empty-title">لا توجد غرف</div>
+                    <div style="font-size: 12px; margin-top: 8px;">أنشئ غرفة خاصة للحصول على كود</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+        <a href="home.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span>الرئيسية</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showToast('المواقع')">
+            <span class="nav-icon">🌐</span>
+            <span>المواقع</span>
+        </a>
+        <a href="friends.html" class="nav-item" onclick="showToast('الأصدقاء')">
+            <span class="nav-icon">👥</span>
+            <span>الأصدقاء</span>
+        </a>
+        <a href="chat.html" class="nav-item">
+            <span class="nav-icon">💬</span>
+            <span>الدردشة</span>
+        </a>
+        <a href="settings.html" class="nav-item active">
+            <span class="nav-icon">⚙️</span>
+            <span>الإعدادات</span>
+        </a>
+    </nav>
+
+    <!-- Confirm Dialog -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-dialog">
+            <div class="confirm-icon" id="confirmIcon">⚠️</div>
+            <div class="confirm-title" id="confirmTitle">تأكيد</div>
+            <div class="confirm-message" id="confirmMessage">هل أنت متأكد؟</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel" onclick="hideConfirm()">إلغاء</button>
+                <button class="confirm-btn confirm" id="confirmBtn" onclick="confirmAction()">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span>✓</span>
+        <span id="toastMessage">تم بنجاح!</span>
+    </div>
+
+    <script type="module">
+        // Wait for Firebase to initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const db = window.firebaseDb;
+        const auth = window.firebaseAuth;
+        
+        let currentUser = null;
+        let userData = null;
+        let currentAction = null;
+        
+        // Country Data
+        const countries = [
+            { code: 'SA', name: 'المملكة العربية السعودية', dial: '+966', flag: '🇸🇦' },
+            { code: 'AE', name: 'الإمارات العربية المتحدة', dial: '+971', flag: '🇦🇪' },
+            { code: 'KW', name: 'دولة الكويت', dial: '+965', flag: '🇰🇼' },
+            { code: 'QA', name: 'دولة قطر', dial: '+974', flag: '🇶🇦' },
+            { code: 'BH', name: 'مملكة البحرين', dial: '+973', flag: '🇧🇭' },
+            { code: 'OM', name: 'سلطنة عمان', dial: '+968', flag: '🇴🇲' },
+            { code: 'EG', name: 'جمهورية مصر العربية', dial: '+20', flag: '🇪🇬' },
+            { code: 'JO', name: 'المملكة الأردنية الهاشمية', dial: '+962', flag: '🇯🇴' },
+            { code: 'LB', name: 'الجمهورية اللبنانية', dial: '+961', flag: '🇱🇧' },
+            { code: 'IQ', name: 'جمهورية العراق', dial: '+964', flag: '🇮🇶' },
+            { code: 'SY', name: 'الجمهورية العربية السورية', dial: '+963', flag: '🇸🇾' },
+            { code: 'PS', name: 'دولة فلسطين', dial: '+970', flag: '🇵🇸' },
+            { code: 'YE', name: 'الجمهورية اليمنية', dial: '+967', flag: '🇾🇪' },
+            { code: 'US', name: 'الولايات المتحدة الأمريكية', dial: '+1', flag: '🇺🇸' },
+            { code: 'GB', name: 'المملكة المتحدة', dial: '+44', flag: '🇬🇧' }
+        ];
+
+        let selectedCountry = countries[0];
+
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            document.getElementById('themeIcon').textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        window.toggleTheme = toggleTheme;
+
+        // Render Countries
+        function renderCountries() {
+            const container = document.getElementById('countriesContainer');
+            let html = '';
+            for (let i = 0; i < countries.length; i++) {
+                const country = countries[i];
+                html += '<div class="country-item" onclick="selectCountry(\'' + country.code + '\')">' +
+                    '<span>' + country.flag + '</span>' +
+                    '<span style="flex: 1;">' + country.name + '</span>' +
+                    '<span style="color: var(--text-muted); font-size: 13px;">' + country.dial + '</span>' +
+                    '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        window.toggleCountryList = function() {
+            const list = document.getElementById('countryDropdown');
+            const trigger = document.querySelector('.country-trigger');
+            list.classList.toggle('show');
+            trigger.classList.toggle('active');
+        };
+
+        window.selectCountry = function(code) {
+            selectedCountry = countries.find(c => c.code === code);
+            document.getElementById('selectedFlag').textContent = selectedCountry.flag;
+            document.getElementById('selectedCountry').textContent = selectedCountry.name;
+            toggleCountryList();
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const select = document.getElementById('countrySelect');
+            if (select && !select.contains(e.target)) {
+                const dropdown = document.getElementById('countryDropdown');
+                const trigger = document.querySelector('.country-trigger');
+                if (dropdown) dropdown.classList.remove('show');
+                if (trigger) trigger.classList.remove('active');
+            }
+        });
+
+        // Load User Data
+        async function loadUserData() {
+            try {
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        showToast('يرجى تسجيل الدخول أولاً', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                        return;
+                    }
+                    
+                    currentUser = user;
+                    
+                    // Get user data from Firestore
+                    const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                    
+                    try {
+                        // Find user by UID in Firestore
+                        const usersRef = window.firebaseDb ? await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js") : null;
+                        if (!usersRef) return;
+                        
+                        const { getDocs, query, where, collection } = usersRef;
+                        const q = query(collection(db, 'users'), where('uid', '==', user.uid));
+                        const snapshot = await getDocs(q);
+                        
+                        if (!snapshot.empty) {
+                            snapshot.forEach((docSnap) => {
+                                userData = docSnap.data();
+                                userData.id = docSnap.id;
+                                populateForm(userData);
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Error loading user data:', err);
+                    }
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function populateForm(data) {
+            // Profile header
+            document.getElementById('displayFullName').textContent = data.fullName || 'المستخدم';
+            document.getElementById('displayUsername').textContent = '@' + (data.username || 'user');
+            
+            // Form fields
+            document.getElementById('fullName').value = data.fullName || '';
+            document.getElementById('username').value = data.username || '';
+            document.getElementById('password').value = data.password || '';
+            document.getElementById('birthDate').value = data.birthDate || '';
+            document.getElementById('phoneNumber').value = data.phoneNumber || '';
+            
+            // Country
+            if (data.country) {
+                const country = countries.find(c => c.name === data.country);
+                if (country) {
+                    selectedCountry = country;
+                    document.getElementById('selectedFlag').textContent = country.flag;
+                    document.getElementById('selectedCountry').textContent = country.name;
+                }
+            }
+
+            // Avatar
+            if (data.fullName) {
+                const initials = data.fullName.split(' ').map(n => n[0]).join('').substring(0, 2);
+                document.getElementById('profileAvatar').innerHTML = '<span class="profile-avatar-placeholder">' + initials + '</span>';
+            }
+        }
+
+        // Save Profile
+        window.saveProfile = async function(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const birthDate = document.getElementById('birthDate').value;
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            
+            // Validate required fields
+            if (!fullName) {
+                showToast('يرجى إدخال الاسم الكامل', 'error');
+                return;
+            }
+            
+            // Validate password match if password is entered
+            if (password || confirmPassword) {
+                if (password !== confirmPassword) {
+                    showToast('كلمتا المرور غير متطابقتين', 'error');
+                    return;
+                }
+                if (password.length < 6) {
+                    showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+                    return;
+                }
+            }
+
+            const saveBtn = document.getElementById('saveBtn');
+            const spinner = document.getElementById('saveSpinner');
+            
+            saveBtn.disabled = true;
+            spinner.classList.add('show');
+
+            try {
+                // Find and update user document
+                const { getDocs, query, where, collection, doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                
+                const q = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    const userDocRef = doc(db, 'users', snapshot.docs[0].id);
+                    
+                    // Only update password if it's entered
+                    const updateData = {
+                        fullName: fullName,
+                        birthDate: birthDate,
+                        country: selectedCountry.name,
+                        countryCode: selectedCountry.code,
+                        phoneCode: selectedCountry.dial,
+                        phoneNumber: phoneNumber,
+                        lastLogin: new Date()
+                    };
+                    
+                    // Add password to update if entered
+                    if (password) {
+                        updateData.password = password;
+                    }
+                    
+                    await updateDoc(userDocRef, updateData);
+                    
+                    showToast('✅ تم حفظ المعلومات بنجاح!');
+                    
+                    // Clear password fields after successful save
+                    document.getElementById('password').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    
+                    // Update display
+                    document.getElementById('displayFullName').textContent = fullName;
+                    const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2);
+                    document.getElementById('profileAvatar').innerHTML = '<span class="profile-avatar-placeholder">' + initials + '</span>';
+                }
+            } catch (error) {
+                console.error('Error saving:', error);
+                showToast('فشل حفظ البيانات', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                spinner.classList.remove('show');
+            }
+        };
+
+        // Confirm Dialog Functions
+        window.showConfirmLogout = function() {
+            currentAction = 'logout';
+            const overlay = document.getElementById('confirmOverlay');
+            const icon = document.getElementById('confirmIcon');
+            const title = document.getElementById('confirmTitle');
+            const message = document.getElementById('confirmMessage');
+            const btn = document.getElementById('confirmBtn');
+            
+            icon.className = 'confirm-icon info';
+            icon.textContent = '🚪';
+            title.textContent = 'تسجيل الخروج';
+            message.textContent = 'هل أنت متأكد من تسجيل الخروج من حسابك؟';
+            btn.className = 'confirm-btn confirm primary';
+            btn.textContent = 'تسجيل خروج';
+            
+            overlay.classList.add('show');
+        };
+
+        window.showConfirmDelete = function() {
+            currentAction = 'delete';
+            const overlay = document.getElementById('confirmOverlay');
+            const icon = document.getElementById('confirmIcon');
+            const title = document.getElementById('confirmTitle');
+            const message = document.getElementById('confirmMessage');
+            const btn = document.getElementById('confirmBtn');
+            
+            icon.className = 'confirm-icon warning';
+            icon.textContent = '⚠️';
+            title.textContent = 'حذف الحساب';
+            message.textContent = 'تحذير! سيتم حذف حسابك وجميع بياناتك نهائياً. هذا الإجراء لا يمكن التراجع عنه.';
+            btn.className = 'confirm-btn confirm danger';
+            btn.textContent = 'حذف الحساب';
+            
+            overlay.classList.add('show');
+        };
+
+        window.hideConfirm = function() {
+            document.getElementById('confirmOverlay').classList.remove('show');
+            currentAction = null;
+        };
+
+        window.confirmAction = function() {
+            if (currentAction === 'logout') {
+                hideConfirm();
+                showToast('جاري تسجيل الخروج...');
+                setTimeout(() => {
+                    signOut(auth).then(() => {
+                        window.location.href = 'index.html';
+                    }).catch((error) => {
+                        showToast('فشل تسجيل الخروج', 'error');
+                    });
+                }, 1000);
+            } else if (currentAction === 'delete') {
+                hideConfirm();
+                showToast('جاري حذف الحساب...');
+                // In a real app, you would delete from Firebase Auth and Firestore here
+                setTimeout(() => {
+                    signOut(auth).then(() => {
+                        window.location.href = 'index.html';
+                    });
+                }, 1500);
+            }
+        };
+
+        // Toast
+        window.showToast = function(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = 'toast' + (type === 'error' ? ' error' : '');
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 3000);
+        };
+
+// Initialize
+        initTheme();
+        renderCountries();
+        loadUserData();
+        loadUserRooms();
+        
+        // Load rooms created by user (for generated codes section)
+        async function loadUserRooms() {
+            if (!currentUser) return;
+            
+            try {
+                const { getDocs, query, where, collection } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                
+                const q = query(collection(db, 'chatRooms'), where('createdBy', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                
+                const container = document.getElementById('generatedCodesList');
+                if (!container) return;
+                
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="generated-code-empty">
+                            <div class="generated-code-empty-icon">🔐</div>
+                            <div class="generated-code-empty-title">لا توجد غرف</div>
+                            <div style="font-size: 12px; margin-top: 8px;">أنشئ غرفة خاصة للحصول على كود</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const roomData = doc.data();
+                    const roomType = roomData.type || 'public';
+                    const isPrivate = roomType === 'private';
+                    const roomCode = roomData.code || '';
+                    const roomImage = roomData.image || '';
+                    
+                    const avatarHtml = roomImage ? 
+                        `<img src="${roomImage}" alt="${roomData.name}">` : 
+                        `<span style="font-size: 20px; color: white;">${isPrivate ? '🔐' : '👥'}</span>`;
+                    
+                    html += `
+                        <div class="generated-code-item">
+                            <div class="generated-code-avatar">${avatarHtml}</div>
+                            <div class="generated-code-info">
+                                <div class="generated-code-name">${roomData.name || 'غرفة'}</div>
+                                <div class="generated-code-type">
+                                    <span class="generated-code-badge ${roomType}">${isPrivate ? 'خاصة' : 'عام'}</span>
+                                </div>
+                            </div>
+                            ${isPrivate && roomCode ? `
+                                <div class="generated-code-value">
+                                    <span>${roomCode}</span>
+                                    <button class="copy-code-btn" onclick="copyRoomCode('${roomCode}')">📋 نسخ</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading user rooms:', error);
+            }
+        }
+        
+        // Copy room code to clipboard
+        window.copyRoomCode = function(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('تم نسخ الكود بنجاح!');
+            }).catch(() => {
+                showToast('فشل نسخ الكود', 'error');
+            });
+        };
+    </script>
+</body>
+</html>
