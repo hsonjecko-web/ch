@@ -640,6 +640,29 @@
 
                 console.log('✅ تم إرسال الرسالة بنجاح');
 
+                // إضافة الرسالة مباشرة للواجهة
+                const messagesContainer = document.getElementById('messagesContainer');
+                const emptyMessage = document.getElementById('emptyMessage');
+                if (emptyMessage) {
+                    emptyMessage.style.display = 'none';
+                }
+                
+                // إنشاء عنصر الرسالة
+                const now = new Date();
+                const time = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+                const messageHtml = `<div class="chat-friend-message sent">
+                    <div class="chat-friend-bubble">${escapeHtml(text)}</div>
+                    <div class="chat-friend-time">${time}</div>
+                </div>`;
+                
+                if (messagesContainer) {
+                    messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+                
+                // مسح حقل الإدخال
+                input.value = '';
+
                 // إرسال إشعار للصديق
                 try {
                     await addDoc(collection(db, 'notifications'), {
@@ -654,13 +677,6 @@
                     console.log('✅ تم إرسال الإشعار');
                 } catch (notifError) {
                     console.warn('⚠️ فشل إرسال الإشعار:', notifError);
-                }
-
-                const container = document.getElementById('messagesContainer');
-                if (container) {
-                    setTimeout(() => {
-                        container.scrollTop = container.scrollHeight;
-                    }, 100);
                 }
 
             } catch (error) {

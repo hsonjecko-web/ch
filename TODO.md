@@ -1,28 +1,11 @@
-# TODO - Chat App Features
+# TODO - Room Join Request System
 
-## Phase 1: Independent Chat Page (chat-friend.html)
-- [x] Create new page without footer
-- [x] Add header with back button, friend name as title
-- [x] Add three dots menu in header
-- [x] Implement dropdown with "Block User" option
-- [x] Check if user is blocked before showing messages
-- [x] Show "تم حظرك" message if blocked
-
-## Phase 2: Pin Friends Feature
-- [ ] Add long-press on friend name to pin
-- [ ] Store pinned friends in localStorage (max 10)
-- [ ] Show pinned section at top of chat list
-
-## Phase 3: Notifications System
-- [x] Friend request notifications badge on friends icon
-- [x] Message notifications badge on chat icon
-- [x] Update badges every 10 seconds
-- [x] Show count for both friend requests and messages
-
-## Phase 4: Update Related Pages
-- [x] Update chat.html to open new chat page
-- [x] Update home.html with notification badges
-- [ ] Update friends.html with notification badges
-- [ ] Update notifications.html
-- [x] Add new CSS styles
+## Tasks:
+- [ ] 1. Update firestore-rules.txt with proper room join request rules
+- [ ] 2. Modify chat.html - Update joinPublicRoom to create join request
+- [ ] 3. Add join request notification system
+- [ ] 4. Add room owner approval/rejection functionality
+- [ ] 5. Add member management (show members, ban users)
+- [ ] 6. Add message management (delete, like, edit) for room owners
+- [ ] 7. Test the implementation
 

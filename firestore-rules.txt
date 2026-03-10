@@ -79,12 +79,54 @@ service cloud.firestore {
     }
     
     // ========================================
+    // الإشعارات - Notifications
+    // ========================================
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.toUid;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.toUid;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.toUid;
+    }
+    
+    // ========================================
+    // المحظورات - Blocked Users
+    // ========================================
+    match /blockedUsers/{userId}/{document=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ========================================
     // طلبات الانضمام للغرف - Room Join Requests
     // ========================================
     match /roomJoinRequests/{requestId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      allow update: if request.auth != null && 
+        // Room owner can approve/reject requests
+        (request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(request.resource.data.roomId)).data.createdBy ||
+         // User can cancel their own request
+         request.auth.uid == resource.data.userId);
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // ========================================
+    // الغرف التي أنشأها المستخدم - User's Created Rooms
+    // ========================================
+    match /userRooms/{userId}/{document=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ========================================
+    // المحظورات من الغرف - Room Banned Users
+    // ========================================
+    match /roomBannedUsers/{roomId}/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && 
+        request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(roomId)).data.createdBy;
+      allow delete: if request.auth != null && 
+        request.auth.uid == get(/databases/$(database)/documents/chatRooms/$(roomId)).data.createdBy;
     }
     
   }
