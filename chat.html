@@ -471,6 +471,7 @@
                 loadPrivateRooms();
                 loadSuggestedRooms();
                 loadPendingRequests();
+                loadOwnerJoinRequests();
                 listenForRequestApprovals();
             }
         });
@@ -510,6 +511,7 @@
             const container = document.getElementById('pendingRequestsList');
             if (!container) return;
             
+            // Show requests sent by current user
             if (pendingRequestsData.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">لا توجد طلبات معلقة</div></div>';
                 return;
@@ -536,6 +538,139 @@
                 }
             });
         }
+        
+        // Load join requests for room owners (my rooms)
+        let ownerJoinRequests = [];
+        
+        function loadOwnerJoinRequests() {
+            if (!currentUser || !currentUserData) return;
+            
+            const q = query(collection(db, 'roomJoinRequests'), where('status', '==', 'pending'));
+            
+            onSnapshot(q, (snapshot) => {
+                ownerJoinRequests = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    ownerJoinRequests.push({ id: doc.id, ...data });
+                });
+                
+                // Show notification badge if there are pending requests for owner's rooms
+                updateRequestBadge();
+            });
+        }
+        
+        function updateRequestBadge() {
+            const pendingTab = document.querySelector('.chat-sub-tab[onclick*="pending"]');
+            if (pendingTab && ownerJoinRequests.length > 0) {
+                pendingTab.innerHTML = `الطلبات <span style="background:red;color:white;padding:2px 6px;border-radius:10px;font-size:10px;">${ownerJoinRequests.length}</span>`;
+            }
+        }
+        
+        // Show join requests for room owners
+        function showOwnerRequests() {
+            const container = document.getElementById('pendingRequestsList');
+            if (!container) return;
+            
+            if (ownerJoinRequests.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">لا توجد طلبات انتظار</div></div>';
+                return;
+            }
+            
+            let html = '';
+            ownerJoinRequests.forEach(async (request) => {
+                try {
+                    const roomDoc = await getDoc(doc(db, 'chatRooms', request.roomId));
+                    if (roomDoc.exists()) {
+                        const roomData = roomDoc.data();
+                        // Check if current user is the room owner
+                        if (roomData.createdBy === currentUser.uid) {
+                            const avatarHtml = request.userAvatar ? 
+                                `<img src="${request.userAvatar}" alt="${request.userName}">` : 
+                                `<span style="font-size:20px;font-weight:700;color:var(--primary)">${(request.userName || 'م').charAt(0)}</span>`;
+                            
+                            html += `<div class="room-item">
+                                <div class="room-item-avatar">${avatarHtml}</div>
+                                <div class="room-item-info">
+                                    <div class="room-item-name">${request.userName}</div>
+                                    <div class="room-item-meta">طلب الانضمام لـ: ${roomData.name}</div>
+                                </div>
+                                <div style="display:flex;gap:8px;">
+                                    <button class="room-action-btn join" onclick="approveJoinRequest('${request.id}', '${request.roomId}', '${request.userId}', '${encodeURIComponent(request.userName || '')}')">موافقة</button>
+                                    <button class="room-action-btn" style="background:var(--error);color:white;" onclick="rejectJoinRequest('${request.id}')">رفض</button>
+                                </div>
+                            </div>`;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error loading request:", error);
+                }
+            });
+            
+            if (!html) {
+                html = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">لا توجد طلبات انتظار</div></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Approve join request
+        window.approveJoinRequest = async function(requestId, roomId, userId, userName) {
+            try {
+                // Update request status
+                await updateDoc(doc(db, 'roomJoinRequests', requestId), {
+                    status: 'approved',
+                    approvedAt: serverTimestamp()
+                });
+                
+                // Add user to room members
+                const roomDoc = await getDoc(doc(db, 'chatRooms', roomId));
+                if (roomDoc.exists()) {
+                    const roomData = roomDoc.data();
+                    let members = roomData.members || [];
+                    if (!members.includes(userId)) {
+                        members.push(userId);
+                        await updateDoc(doc(db, 'chatRooms', roomId), { members: members });
+                    }
+                }
+                
+                // Create notification for the user
+                await addDoc(collection(db, 'notifications'), {
+                    toUid: userId,
+                    fromUid: currentUser.uid,
+                    fromName: currentUserData?.fullName || 'المستخدم',
+                    type: 'room_join_approved',
+                    roomId: roomId,
+                    message: `تم قبول طلب انضمامك للغرفة`,
+                    createdAt: serverTimestamp(),
+                    read: false
+                });
+                
+                showToast('تم قبول الطلب بنجاح!');
+                loadOwnerJoinRequests();
+                loadJoinedRooms();
+                
+            } catch (error) {
+                console.error("Error approving request:", error);
+                showToast('فشل في قبول الطلب', 'error');
+            }
+        };
+        
+        // Reject join request
+        window.rejectJoinRequest = async function(requestId) {
+            try {
+                await updateDoc(doc(db, 'roomJoinRequests', requestId), {
+                    status: 'rejected',
+                    rejectedAt: serverTimestamp()
+                });
+                
+                showToast('تم رفض الطلب');
+                loadOwnerJoinRequests();
+                
+            } catch (error) {
+                console.error("Error rejecting request:", error);
+                showToast('فشل في رفض الطلب', 'error');
+            }
+        };
         
         // Listen for request approvals
         function listenForRequestApprovals() {
@@ -889,6 +1024,12 @@
                 return;
             }
             
+            // Check if already requested
+            if (sentJoinRequests.includes(roomId)) {
+                showToast('تم إرسال طلبك مسبقاً', 'info');
+                return;
+            }
+            
             try {
                 const roomDoc = await getDoc(doc(db, 'chatRooms', roomId));
                 if (!roomDoc.exists()) {
@@ -897,19 +1038,37 @@
                 }
                 
                 const roomData = roomDoc.data();
-                let members = roomData.members || [];
                 
-                if (!members.includes(currentUser.uid)) {
-                    members.push(currentUser.uid);
-                    await updateDoc(doc(db, 'chatRooms', roomId), { members: members });
+                // Check if user is already a member
+                let members = roomData.members || [];
+                if (members.includes(currentUser.uid)) {
+                    showToast('أنت بالفعل عضو في هذه الغرفة', 'info');
+                    return;
                 }
                 
-                showToast('تم الانضمام للغرفة بنجاح!');
+                // Create join request instead of direct join
+                await addDoc(collection(db, 'roomJoinRequests'), {
+                    roomId: roomId,
+                    roomName: decodeURIComponent(roomName),
+                    userId: currentUser.uid,
+                    userName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
+                    userAvatar: currentUserData?.avatar || '',
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+                
+                // Add to sent requests locally
+                sentJoinRequests.push(roomId);
+                
+                showToast('تم إرسال طلب انضمامك! بانتظار موافقة صاحب الغرفة');
+                
+                // Reload suggested rooms to show pending status
                 loadSuggestedRooms();
-                loadJoinedRooms();
+                loadPendingRequests();
+                
             } catch (error) {
                 console.error("Error joining room:", error);
-                showToast('فشل الانضمام للغرفة', 'error');
+                showToast('فشل إرسال الطلب', 'error');
             }
         };
         
