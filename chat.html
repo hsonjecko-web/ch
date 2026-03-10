@@ -665,18 +665,44 @@
             });
         }
         
-        // Send message
+        // Send message - مع تصحيح الأخطاء والمعالجة المحسنة
         window.sendMessage = async function() {
             const input = document.getElementById('messageInput');
-            const text = input.value.trim();
+            const text = input ? input.value.trim() : '';
             
-            if (!text || !currentChatPartner || !currentUser) return;
+            // تحقق إضافي من البيانات المطلوبة
+            if (!text) {
+                console.log('📝 النص فارغ');
+                return;
+            }
             
-            input.value = '';
+            if (!currentChatPartner || !currentChatPartner.uid) {
+                console.error('❌ بيانات الشريك غير موجودة');
+                showToast('خطأ: الشريك غير محدد', 'error');
+                return;
+            }
             
+            if (!currentUser) {
+                console.error('❌ المستخدم الحالي غير موجود');
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            if (!currentUserData) {
+                console.error('⚠️ بيانات المستخدم لم تحميل بعد، جاري إعادة التحميل...');
+                await loadCurrentUserData();
+                if (!currentUserData) {
+                    showToast('خطأ في تحميل بيانات المستخدم', 'error');
+                    return;
+                }
+            }
+
+            console.log('📤 جاري إرسال الرسالة:', text);
+
             try {
                 const chatId = [currentUser.uid, currentChatPartner.uid].sort().join('_');
-                
+                console.log('💬 معرف المحادثة:', chatId);
+
                 await addDoc(collection(db, 'chats', chatId, 'messages'), {
                     text: text,
                     senderId: currentUser.uid,
@@ -684,15 +710,29 @@
                     receiverId: currentChatPartner.uid,
                     createdAt: serverTimestamp()
                 });
-                
+
+                console.log('✅ تم إرسال الرسالة بنجاح');
+
                 const container = document.getElementById('messagesContainer');
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 100);
-                
+                if (container) {
+                    setTimeout(() => {
+                        container.scrollTop = container.scrollHeight;
+                    }, 100);
+                }
+
             } catch (error) {
-                console.error("Error sending message:", error);
-                showToast('فشل إرسال الرسالة', 'error');
+                console.error("❌ خطأ في إرسال الرسالة:", error);
+                console.error("رمز الخطأ:", error.code);
+                console.error("رسالة الخطأ:", error.message);
+                
+                let errorMessage = 'فشل إرسال الرسالة';
+                if (error.code === 'permission-denied') {
+                    errorMessage = 'ليس لديك صلاحية إرسال الرسالة';
+                } else if (error.code === 'not-found') {
+                    errorMessage = 'المحادثة غير موجودة';
+                }
+                
+                showToast(errorMessage, 'error');
             }
         };
         

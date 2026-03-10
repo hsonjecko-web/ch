@@ -584,18 +584,52 @@
             });
         }
 
-        // Send message
+        // Send message - مع تصحيح الأخطاء والمعالجة المحسنة
         window.sendMessage = async function() {
             const input = document.getElementById('messageInput');
-            const text = input.value.trim();
+            const text = input ? input.value.trim() : '';
+            
+            // تحقق إضافي من البيانات المطلوبة
+            if (!text) {
+                console.log('📝 النص فارغ');
+                return;
+            }
+            
+            if (!friendUid) {
+                console.error('❌ معرف الصديق غير موجود');
+                showToast('خطأ: معرف الصديق غير موجود', 'error');
+                return;
+            }
+            
+            if (!currentUser) {
+                console.error('❌ المستخدم الحالي غير موجود');
+                showToast('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
+            if (!currentUserData) {
+                console.error('⚠️ بيانات المستخدم لم تحميل بعد، جاري إعادة التحميل...');
+                // إعادة تحميل بيانات المستخدم
+                await loadCurrentUserData();
+                if (!currentUserData) {
+                    showToast('خطأ في تحميل بيانات المستخدم', 'error');
+                    return;
+                }
+            }
+            
+            if (isBlocked) {
+                console.error('❌ أنت محظور من هذا المستخدم');
+                showToast('لا يمكنك إرسال رسالة لهذا الصديق', 'error');
+                return;
+            }
 
-            if (!text || !friendUid || !currentUser || isBlocked) return;
-
-            input.value = '';
+            console.log('📤 جاري إرسال الرسالة:', text);
 
             try {
                 const chatId = [currentUser.uid, friendUid].sort().join('_');
+                console.log('💬 معرف المحادثة:', chatId);
 
+                // إرسال الرسالة
                 await addDoc(collection(db, 'chats', chatId, 'messages'), {
                     text: text,
                     senderId: currentUser.uid,
@@ -604,25 +638,44 @@
                     createdAt: serverTimestamp()
                 });
 
-                // Send notification to friend
-                await addDoc(collection(db, 'notifications'), {
-                    type: 'message',
-                    fromUid: currentUser.uid,
-                    fromName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
-                    toUid: friendUid,
-                    text: text,
-                    createdAt: serverTimestamp(),
-                    read: false
-                });
+                console.log('✅ تم إرسال الرسالة بنجاح');
+
+                // إرسال إشعار للصديق
+                try {
+                    await addDoc(collection(db, 'notifications'), {
+                        type: 'message',
+                        fromUid: currentUser.uid,
+                        fromName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
+                        toUid: friendUid,
+                        text: text,
+                        createdAt: serverTimestamp(),
+                        read: false
+                    });
+                    console.log('✅ تم إرسال الإشعار');
+                } catch (notifError) {
+                    console.warn('⚠️ فشل إرسال الإشعار:', notifError);
+                }
 
                 const container = document.getElementById('messagesContainer');
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 100);
+                if (container) {
+                    setTimeout(() => {
+                        container.scrollTop = container.scrollHeight;
+                    }, 100);
+                }
 
             } catch (error) {
-                console.error("Error sending message:", error);
-                showToast('فشل إرسال الرسالة', 'error');
+                console.error("❌ خطأ في إرسال الرسالة:", error);
+                console.error("رمز الخطأ:", error.code);
+                console.error("رسالة الخطأ:", error.message);
+                
+                let errorMessage = 'فشل إرسال الرسالة';
+                if (error.code === 'permission-denied') {
+                    errorMessage = 'ليس لديك صلاحية إرسال الرسالة';
+                } else if (error.code === 'not-found') {
+                    errorMessage = 'المحادثة غير موجودة';
+                }
+                
+                showToast(errorMessage, 'error');
             }
         };
 
