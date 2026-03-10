@@ -607,31 +607,13 @@
             });
         }
         
-        // Open private chat
+// Open private chat
         window.openPrivateChat = function(userId, userName, userUsername = '') {
             const decodedName = decodeURIComponent(userName);
             const decodedUsername = decodeURIComponent(userUsername);
             
-            currentChatPartner = {
-                uid: userId,
-                name: decodedName,
-                username: decodedUsername
-            };
-            
-            // Update header
-            const avatarEl = document.getElementById('chatViewAvatar');
-            const initials = decodedName.split(' ').map(n => n[0]).join('').substring(0, 2);
-            avatarEl.innerHTML = `<span style="font-size: 16px; font-weight: 700; color: var(--primary);">${initials}</span>`;
-            
-            document.getElementById('chatViewName').textContent = decodedName;
-            document.getElementById('chatViewStatus').textContent = '@' + (decodedUsername || 'user');
-            
-            // Show chat view, hide list
-            document.getElementById('chatListView').style.display = 'none';
-            document.getElementById('chatView').classList.add('active');
-            
-            // Load messages
-            loadMessages(userId);
+            // Open in new independent page
+            window.location.href = `chat-friend.html?user=${userId}&name=${encodeURIComponent(decodedName)}&username=${encodeURIComponent(decodedUsername)}`;
         };
         
         // Load messages

@@ -60,16 +60,20 @@ service cloud.firestore {
     // ========================================
     // المحادثات الخاصة - Private Chats
     // ========================================
+    // دالة مساعدة للتحقق من أن المستخدم جزء من المحادثة
+    function isChatParticipant(chatId) {
+      return chatId.split('_').size() == 2 && 
+        (chatId.split('_')[0] == request.auth.uid || chatId.split('_')[1] == request.auth.uid);
+    }
+    
     match /chats/{chatId} {
-      allow read, write: if request.auth != null && 
-        chatId.split('_').hasAny([request.auth.uid]);
+      allow read, write: if request.auth != null && isChatParticipant(chatId);
       
       // رسائل المحادثة الخاصة
       match /messages/{messageId} {
-        allow read: if request.auth != null && 
-          chatId.split('_').hasAny([request.auth.uid]);
+        allow read: if request.auth != null && isChatParticipant(chatId);
         allow create: if request.auth != null && 
-          chatId.split('_').hasAny([request.auth.uid]) &&
+          isChatParticipant(chatId) &&
           request.resource.data.senderId == request.auth.uid;
       }
     }

@@ -719,6 +719,29 @@ input, textarea, select {
     justify-content: center;
 }
 
+/* Navigation Badge */
+.nav-badge {
+    position: absolute;
+    top: -2px;
+    right: 8px;
+    min-width: 18px;
+    height: 18px;
+    background: var(--error);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+/* Navigation Badge Position */
+.footer-nav .nav-item {
+    position: relative;
+}
+
 /* ========================================
    الإشعارات - Toast Notifications
    ======================================== */

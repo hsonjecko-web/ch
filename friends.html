@@ -341,7 +341,7 @@
 
         // Open chat
         window.openChat = function(userUid, userName) {
-            window.location.href = `chat.html?user=${userUid}`;
+            window.location.href = `chat-friend.html?user=${userUid}&name=${encodeURIComponent(userName)}`;
         };
 
         // Load pending requests (received)

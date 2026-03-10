@@ -114,8 +114,8 @@
     <nav class="footer-nav">
         <a href="#" class="nav-item active"><span class="nav-icon">🏠</span><span>الرئيسية</span></a>
         <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span>المواقع</span></a>
-        <a href="friends.html" class="nav-item"><span class="nav-icon">👥</span><span>الأصدقاء</span></a>
-        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span>الدردشة</span></a>
+        <a href="friends.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-badge" id="friendsBadge" style="display:none;">0</span><span>الأصدقاء</span></a>
+        <a href="chat.html" class="nav-item"><span class="nav-icon">💬</span><span class="nav-badge" id="chatBadge" style="display:none;">0</span><span>الدردشة</span></a>
         <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
     </nav>
     <div class="toast" id="toast"><span>✓</span><span id="toastMessage">تم!</span></div>
@@ -187,15 +187,78 @@
         let sentRequestsUids = [];
         let friendsUids = [];
 
-        // Get current user
+// Get current user
         auth.onAuthStateChanged(async (user) => {
             currentUser = user;
             if (user) {
                 await loadCurrentUserData();
                 await loadSentRequests();
                 await loadFriends();
+                // Start updating notification badges
+                updateNotificationBadges();
+                setInterval(updateNotificationBadges, 10000);
             }
         });
+
+        // Update notification badges
+        async function updateNotificationBadges() {
+            if (!currentUser) return;
+
+            try {
+                // Check friend requests
+                const requestsQ = query(collection(db, 'friendRequests'), where('toUid', '==', currentUser.uid), where('status', '==', 'pending'));
+                const requestsSnap = await getDocs(requestsQ);
+                const requestsCount = requestsSnap.size;
+
+                // Update friends badge
+                const friendsBadge = document.getElementById('friendsBadge');
+                if (friendsBadge) {
+                    if (requestsCount > 0) {
+                        friendsBadge.textContent = requestsCount > 99 ? '99+' : requestsCount;
+                        friendsBadge.style.display = 'flex';
+                    } else {
+                        friendsBadge.style.display = 'none';
+                    }
+                }
+
+                // Check unread messages from friends
+                let messagesCount = 0;
+                
+                // Get all friends
+                const friendsQ = query(collection(db, 'friends'), where('userId', '==', currentUser.uid));
+                const friendsSnap = await getDocs(friendsQ);
+                const friendIds = [];
+                friendsSnap.forEach(doc => {
+                    friendIds.push(doc.data().friendId);
+                });
+
+                // Check for unread messages from each friend
+                for (const friendId of friendIds) {
+                    const chatId = [currentUser.uid, friendId].sort().join('_');
+                    const messagesQ = query(collection(db, 'chats', chatId, 'messages'), where('receiverId', '==', currentUser.uid));
+                    const messagesSnap = await getDocs(messagesQ);
+                    messagesSnap.forEach(doc => {
+                        if (!doc.data().read) {
+                            messagesCount++;
+                        }
+                    });
+                }
+
+                // Update chat badge
+                const chatBadge = document.getElementById('chatBadge');
+                if (chatBadge) {
+                    if (messagesCount > 0) {
+                        chatBadge.textContent = messagesCount > 99 ? '99+' : messagesCount;
+                        chatBadge.style.display = 'flex';
+                    } else {
+                        chatBadge.style.display = 'none';
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error updating notification badges:", error);
+            }
+        }
 
         // Load current user data
         async function loadCurrentUserData() {
@@ -467,7 +530,7 @@
         window.handleProfileChat = function() {
             if (!selectedProfileUser) return;
             closeProfileModal();
-            window.location.href = `chat.html?user=${selectedProfileUser.uid}`;
+            window.location.href = `chat-friend.html?user=${selectedProfileUser.uid}&name=${encodeURIComponent(selectedProfileUser.fullName || '')}&username=${encodeURIComponent(selectedProfileUser.username || '')}`;
         };
 
         // Close profile modal

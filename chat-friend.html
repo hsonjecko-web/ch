@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دردشة مع صديق</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            padding-bottom: 0;
+            background: var(--background);
+        }
+
+        /* Independent Chat Header */
+        .chat-friend-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .chat-friend-back-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .chat-friend-back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-friend-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-friend-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-friend-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-friend-name {
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .chat-friend-status {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        /* Three Dots Menu */
+        .chat-friend-menu-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .chat-friend-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chat-friend-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            overflow: hidden;
+        }
+
+        .chat-friend-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .chat-friend-dropdown-item {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .chat-friend-dropdown-item:hover {
+            background: var(--surface-alt);
+        }
+
+        .chat-friend-dropdown-item.block {
+            color: var(--error);
+        }
+
+        .chat-friend-dropdown-item.blocked {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error);
+        }
+
+        /* Blocked Message */
+        .blocked-message {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 180px);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .blocked-message.show {
+            display: flex;
+        }
+
+        .blocked-message-icon {
+            width: 100px;
+            height: 100px;
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .blocked-message-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--error);
+            margin-bottom: 8px;
+        }
+
+        .blocked-message-text {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Chat Container */
+        .chat-friend-container {
+            height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-friend-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-friend-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-friend-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-friend-messages::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .chat-friend-message {
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-friend-message.sent {
+            align-self: flex-end;
+        }
+
+        .chat-friend-message.received {
+            align-self: flex-start;
+        }
+
+        .chat-friend-bubble {
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .chat-friend-message.sent .chat-friend-bubble {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-friend-message.received .chat-friend-bubble {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-friend-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .chat-friend-message.sent .chat-friend-time {
+            text-align: left;
+        }
+
+        .chat-friend-message.received .chat-friend-time {
+            text-align: right;
+        }
+
+        .chat-friend-date-separator {
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--surface-alt);
+            border-radius: 12px;
+            align-self: center;
+            margin: 8px 0;
+        }
+
+        .chat-friend-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .chat-friend-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Chat Input */
+        .chat-friend-input-area {
+            padding: 12px 16px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-friend-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-friend-input:focus {
+            border-color: var(--primary);
+        }
+
+        .chat-friend-send-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chat-friend-send-btn:hover {
+            background: var(--primary-light);
+        }
+
+        /* Dropdown Overlay */
+        .chat-friend-dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: none;
+        }
+
+        .chat-friend-dropdown-overlay.show {
+            display: block;
+        }
+
+        /* Unblock option in dropdown */
+        .chat-friend-dropdown-item.unblock {
+            color: var(--success);
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        const firebaseConfig = { apiKey: "AIzaSyDVP5IRHetBo7JDSRLteQOFX4fhsts3ur0", authDomain: "chat-94032.firebaseapp.com", projectId: "chat-94032", storageBucket: "chat-94032.firebasestorage.app", messagingSenderId: "920803161623", appId: "1:920803161623:web:a2995a99c07b42af1d0e52" };
+        const app = initializeApp(firebaseConfig);
+        window.firebaseApps = [app];
+    </script>
+</head>
+<body>
+    <!-- Dropdown Overlay -->
+    <div class="chat-friend-dropdown-overlay" id="dropdownOverlay" onclick="closeDropdown()"></div>
+
+    <!-- Header -->
+    <header class="chat-friend-header">
+        <a href="chat.html" class="chat-friend-back-btn">←</a>
+        <div class="chat-friend-info">
+            <div class="chat-friend-avatar" id="friendAvatar">
+                <span style="font-size: 16px; font-weight: 700; color: white;">?</span>
+            </div>
+            <div>
+                <div class="chat-friend-name" id="friendName">...</div>
+                <div class="chat-friend-status" id="friendStatus">@...</div>
+            </div>
+        </div>
+        <button class="chat-friend-menu-btn" onclick="toggleDropdown()">⋮</button>
+        
+        <!-- Dropdown Menu -->
+        <div class="chat-friend-dropdown" id="menuDropdown">
+            <div class="chat-friend-dropdown-item block" id="blockOption" onclick="blockUser()">
+                <span>🚫</span>
+                <span>حظر المستخدم</span>
+            </div>
+            <div class="chat-friend-dropdown-item unblock" id="unblockOption" onclick="unblockUser()" style="display: none;">
+                <span>✓</span>
+                <span>إلغاء الحظر</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Blocked Message -->
+    <div class="blocked-message" id="blockedMessage">
+        <div class="blocked-message-icon">🚫</div>
+        <div class="blocked-message-title">تم حظرك</div>
+        <div class="blocked-message-text">لا يمكنك المراسلة مع هذا الصديق</div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-friend-container" id="chatContainer">
+        <div class="chat-friend-messages" id="messagesContainer">
+            <div class="chat-friend-empty" id="emptyMessage">
+                <div class="chat-friend-empty-icon">💬</div>
+                <div>ابدأ المحادثة الآن!</div>
+            </div>
+        </div>
+
+        <div class="chat-friend-input-area">
+            <input type="text" class="chat-friend-input" id="messageInput" placeholder="اكتب رسالتك..." onkeypress="handleMessageKeyPress(event)">
+            <button class="chat-friend-send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script type="module">
+        import { getFirestore, collection, onSnapshot, query, orderBy, where, getDocs, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const db = getFirestore(window.firebaseApps[0]);
+        const auth = getAuth(window.firebaseApps[0]);
+
+        let currentUser = null;
+        let currentUserData = null;
+        let friendUid = null;
+        let friendName = '';
+        let friendUsername = '';
+        let friendAvatar = '';
+        let messagesUnsubscribe = null;
+        let isBlocked = false;
+        let isBlockedByMe = false;
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        friendUid = urlParams.get('user');
+        friendName = decodeURIComponent(urlParams.get('name') || '');
+        friendUsername = decodeURIComponent(urlParams.get('username') || '');
+        friendAvatar = decodeURIComponent(urlParams.get('avatar') || '');
+
+        // Initialize
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                await loadCurrentUserData();
+                await checkBlockStatus();
+                loadFriendInfo();
+                loadMessages();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Load current user data
+        async function loadCurrentUserData() {
+            try {
+                const q = query(collection(db, 'users'), where('uid', '==', currentUser.uid));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    currentUserData = { id: doc.id, ...doc.data() };
+                });
+            } catch (error) {
+                console.error("Error loading user data:", error);
+            }
+        }
+
+        // Load friend info
+        function loadFriendInfo() {
+            const avatarEl = document.getElementById('friendAvatar');
+            const nameEl = document.getElementById('friendName');
+            const statusEl = document.getElementById('friendStatus');
+
+            if (friendAvatar && friendAvatar.length > 0 && friendAvatar !== 'null') {
+                avatarEl.innerHTML = `<img src="${friendAvatar}" alt="${friendName}">`;
+            } else {
+                const initials = friendName ? friendName.split(' ').map(n => n[0]).join('').substring(0, 2) : '?';
+                avatarEl.innerHTML = `<span style="font-size: 16px; font-weight: 700; color: white;">${initials}</span>`;
+            }
+
+            nameEl.textContent = friendName || 'صديق';
+            statusEl.textContent = '@' + (friendUsername || 'user');
+        }
+
+        // Check block status
+        async function checkBlockStatus() {
+            if (!currentUser || !friendUid) return;
+
+            // Check if I blocked the friend
+            const blockedRef = doc(db, 'blockedUsers', currentUser.uid, 'blocked', friendUid);
+            const blockedSnap = await getDoc(blockedRef);
+            isBlockedByMe = blockedSnap.exists();
+
+            // Check if friend blocked me
+            const myBlockedRef = doc(db, 'blockedUsers', friendUid, 'blocked', currentUser.uid);
+            const myBlockedSnap = await getDoc(myBlockedRef);
+            isBlocked = myBlockedSnap.exists();
+
+            updateBlockUI();
+            updateChatVisibility();
+        }
+
+        // Update block UI
+        function updateBlockUI() {
+            const blockOption = document.getElementById('blockOption');
+            const unblockOption = document.getElementById('unblockOption');
+
+            if (isBlockedByMe) {
+                blockOption.style.display = 'none';
+                unblockOption.style.display = 'flex';
+            } else {
+                blockOption.style.display = 'flex';
+                unblockOption.style.display = 'none';
+            }
+        }
+
+        // Update chat visibility
+        function updateChatVisibility() {
+            const chatContainer = document.getElementById('chatContainer');
+            const blockedMessage = document.getElementById('blockedMessage');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (isBlocked) {
+                chatContainer.style.display = 'none';
+                blockedMessage.classList.add('show');
+            } else {
+                chatContainer.style.display = 'flex';
+                blockedMessage.classList.remove('show');
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+            }
+        }
+
+        // Load messages
+        function loadMessages() {
+            if (!currentUser || !friendUid) return;
+
+            const container = document.getElementById('messagesContainer');
+
+            if (messagesUnsubscribe) {
+                messagesUnsubscribe();
+            }
+
+            // Create chat ID (sorted user IDs)
+            const chatId = [currentUser.uid, friendUid].sort().join('_');
+
+            const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
+
+            messagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                let html = '';
+                let hasMessages = false;
+                let lastDate = '';
+
+                snapshot.forEach((doc) => {
+                    hasMessages = true;
+                    const msg = doc.data();
+                    const messageDate = msg.createdAt ? msg.createdAt.toDate().toLocaleDateString('ar-SA') : '';
+
+                    if (messageDate !== lastDate) {
+                        html += `<div class="chat-friend-date-separator">${formatMessageDate(msg.createdAt)}</div>`;
+                        lastDate = messageDate;
+                    }
+
+                    const isSent = msg.senderId === currentUser.uid;
+                    const time = msg.createdAt ? msg.createdAt.toDate().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '';
+
+                    html += `<div class="chat-friend-message ${isSent ? 'sent' : 'received'}">
+                        <div class="chat-friend-bubble">${escapeHtml(msg.text)}</div>
+                        <div class="chat-friend-time">${time}</div>
+                    </div>`;
+                });
+
+                if (!hasMessages) {
+                    container.innerHTML = '<div class="chat-friend-empty"><div class="chat-friend-empty-icon">💬</div><div>ابدأ المحادثة الآن!</div></div>';
+                } else {
+                    container.innerHTML = html;
+                    container.scrollTop = container.scrollHeight;
+                }
+            }, (error) => {
+                console.error("Error loading messages:", error);
+                container.innerHTML = '<div class="chat-friend-empty"><div class="chat-friend-empty-icon">⚠️</div><div>خطأ في تحميل الرسائل</div></div>';
+            });
+        }
+
+        // Send message
+        window.sendMessage = async function() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+
+            if (!text || !friendUid || !currentUser || isBlocked) return;
+
+            input.value = '';
+
+            try {
+                const chatId = [currentUser.uid, friendUid].sort().join('_');
+
+                await addDoc(collection(db, 'chats', chatId, 'messages'), {
+                    text: text,
+                    senderId: currentUser.uid,
+                    senderName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
+                    receiverId: friendUid,
+                    createdAt: serverTimestamp()
+                });
+
+                // Send notification to friend
+                await addDoc(collection(db, 'notifications'), {
+                    type: 'message',
+                    fromUid: currentUser.uid,
+                    fromName: currentUserData?.fullName || currentUser.displayName || 'مستخدم',
+                    toUid: friendUid,
+                    text: text,
+                    createdAt: serverTimestamp(),
+                    read: false
+                });
+
+                const container = document.getElementById('messagesContainer');
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+
+            } catch (error) {
+                console.error("Error sending message:", error);
+                showToast('فشل إرسال الرسالة', 'error');
+            }
+        };
+
+        window.handleMessageKeyPress = function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        };
+
+        // Dropdown functions
+        window.toggleDropdown = function() {
+            const dropdown = document.getElementById('menuDropdown');
+            const overlay = document.getElementById('dropdownOverlay');
+            dropdown.classList.toggle('show');
+            overlay.classList.toggle('show');
+        };
+
+        window.closeDropdown = function() {
+            const dropdown = document.getElementById('menuDropdown');
+            const overlay = document.getElementById('dropdownOverlay');
+            dropdown.classList.remove('show');
+            overlay.classList.remove('show');
+        };
+
+        // Block user
+        window.blockUser = async function() {
+            if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
+
+            try {
+                await setDoc(doc(db, 'blockedUsers', currentUser.uid, 'blocked', friendUid), {
+                    blockedAt: serverTimestamp(),
+                    friendName: friendName,
+                    friendUsername: friendUsername
+                });
+
+                showToast('تم حظر المستخدم');
+                closeDropdown();
+                isBlockedByMe = true;
+                updateBlockUI();
+            } catch (error) {
+                console.error("Error blocking user:", error);
+                showToast('فشل حظر المستخدم', 'error');
+            }
+        };
+
+        // Unblock user
+        window.unblockUser = async function() {
+            try {
+                await updateDoc(doc(db, 'blockedUsers', currentUser.uid, 'blocked', friendUid), {
+                    blockedAt: null
+                });
+
+                showToast('تم إلغاء الحظر');
+                closeDropdown();
+                isBlockedByMe = false;
+                updateBlockUI();
+            } catch (error) {
+                console.error("Error unblocking user:", error);
+                showToast('فشل إلغاء الحظر', 'error');
+            }
+        };
+
+        // Helper functions
+        function formatMessageDate(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate();
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (date.toDateString() === today.toDateString()) {
+                return 'اليوم';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'أمس';
+            } else {
+                return date.toLocaleDateString('ar-SA', { day: 'numeric', month: 'long' });
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        initTheme();
+    </script>
+</body>
+</html>
+
